@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "Cantonese Speak & Insert",
+  "description": "One-tap Cantonese voice typing and auto-insert for Chrome.",
+  "version": "1.0.0",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "sidePanel"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "commands": {
+    "quick-speak-insert": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y"
+      },
+      "description": "Quick speak and auto-insert into focused field"
+    }
+  },
+  "action": {
+    "default_title": "Open Speak & Insert"
+  },
+  "side_panel": {
+    "default_path": "panel.html"
+  }
+}
