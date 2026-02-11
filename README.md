@@ -6,7 +6,7 @@ Press once, speak, and your text is inserted into the currently focused input fi
 ## Features
 
 - Clean side panel UI with one main button: `Speak & Insert`
-- Keyboard shortcut quick flow: `Ctrl+Shift+Y`
+- Keyboard shortcut quick flow: double-press `Control`
 - Auto insert into `input`, `textarea`, and `contenteditable`
 - Supports Cantonese recognition (`yue-Hant-HK` default)
 
@@ -32,14 +32,12 @@ Press once, speak, and your text is inserted into the currently focused input fi
 ### Keyboard Shortcut
 
 1. Click into a text box
-2. Press `Ctrl+Shift+Y`
+2. Double-press `Control`
 3. A small recording bubble appears
 4. Speak and pause to auto insert
 
-Shortcut can be changed at `chrome://extensions/shortcuts`.
-
 If shortcut appears to do nothing:
-- Open `chrome://extensions/shortcuts` and confirm this extension command has a key assigned (conflicts can clear the default).
+- Press `Control` twice quickly (within about half a second).
 - Use a normal website tab (`https://...`), not `chrome://...` or extension/internal pages.
 - Focus a supported field (`input`, `textarea`, or `contenteditable`) before pressing the shortcut.
 - Confirm microphone permission is allowed for the current site.

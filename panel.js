@@ -21,7 +21,7 @@ init();
 
 function init() {
   ui.speakInsertBtn.addEventListener('click', handleSpeakInsertClick);
-  void syncShortcutHint();
+  setShortcutHint();
 
   if (!SpeechRecognition) {
     ui.speakInsertBtn.disabled = true;
@@ -31,6 +31,14 @@ function init() {
 
   updateButton();
   setStatus('Click a text box on page, then press Speak & Insert.', 'neutral');
+}
+
+function setShortcutHint() {
+  if (!ui.shortcutHint) {
+    return;
+  }
+
+  ui.shortcutHint.textContent = 'Quick flow: double-press Control on page.';
 }
 
 async function handleSpeakInsertClick() {
@@ -176,38 +184,6 @@ function updateButton() {
 function setStatus(text, tone) {
   ui.status.textContent = text;
   ui.status.className = `status status-${tone}`;
-}
-
-async function syncShortcutHint() {
-  if (!ui.shortcutHint || !chrome.commands?.getAll) {
-    return;
-  }
-
-  try {
-    const commands = await chrome.commands.getAll();
-    const quickSpeakInsert = commands.find((item) => item.name === 'quick-speak-insert');
-    const shortcut = quickSpeakInsert?.shortcut?.trim() || '';
-    renderShortcutHint(shortcut);
-  } catch (_error) {
-    // Keep the default hint text when command query is unavailable.
-  }
-}
-
-function renderShortcutHint(shortcut) {
-  if (!ui.shortcutHint) {
-    return;
-  }
-
-  ui.shortcutHint.textContent = '';
-  if (shortcut) {
-    ui.shortcutHint.append('Keyboard shortcut: ');
-    const code = document.createElement('code');
-    code.textContent = shortcut;
-    ui.shortcutHint.append(code);
-    return;
-  }
-
-  ui.shortcutHint.textContent = 'Keyboard shortcut is not assigned. Set one at chrome://extensions/shortcuts.';
 }
 
 async function getRecognitionLang() {

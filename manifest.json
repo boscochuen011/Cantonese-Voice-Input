@@ -16,14 +16,18 @@
   "background": {
     "service_worker": "service-worker.js"
   },
-  "commands": {
-    "quick-speak-insert": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+Y"
-      },
-      "description": "Quick speak and auto-insert into focused field"
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "content-script.js"
+      ],
+      "run_at": "document_idle"
     }
-  },
+  ],
   "action": {
     "default_title": "Open Speak & Insert"
   },

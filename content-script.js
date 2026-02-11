@@ -8,6 +8,7 @@
   const INPUT_TYPES = new Set(['text', 'search', 'url', 'tel', 'password', 'email', 'number']);
   const STYLE_ID = 'quick-voice-style';
   const OVERLAY_ID = 'quick-voice-overlay';
+  const DOUBLE_CONTROL_WINDOW_MS = 450;
 
   const state = {
     recognition: null,
@@ -15,8 +16,12 @@
     lastError: '',
     finalText: '',
     interimText: '',
-    target: null
+    target: null,
+    controlTapStartedAt: 0,
+    controlTapResetTimer: 0
   };
+
+  setupDoubleControlTrigger();
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message?.type !== 'quickVoice:start') {
@@ -69,7 +74,7 @@
 
     const target = getPreferredTarget();
     if (!target) {
-      setOverlayStatus('Click inside a text box, then press shortcut again.', 'warn', true);
+      setOverlayStatus('Click inside a text box, then double-press Control again.', 'warn', true);
       return { ok: false, reason: 'no_target' };
     }
 
@@ -275,6 +280,66 @@
     }
 
     return `${text.slice(0, maxLength - 1)}...`;
+  }
+
+  function setupDoubleControlTrigger() {
+    window.addEventListener('keydown', handleDoubleControlKeydown, true);
+    window.addEventListener('blur', clearPendingControlTap, true);
+    document.addEventListener('visibilitychange', handleVisibilityChange, true);
+  }
+
+  function handleDoubleControlKeydown(event) {
+    if (event.repeat) {
+      return;
+    }
+
+    if (event.key !== 'Control') {
+      clearPendingControlTap();
+      return;
+    }
+
+    if (event.altKey || event.metaKey || event.shiftKey) {
+      clearPendingControlTap();
+      return;
+    }
+
+    const now = Date.now();
+    const withinWindow = state.controlTapStartedAt > 0 && (now - state.controlTapStartedAt) <= DOUBLE_CONTROL_WINDOW_MS;
+
+    if (withinWindow) {
+      clearPendingControlTap();
+      void startQuickVoice();
+      return;
+    }
+
+    rememberControlTap(now);
+  }
+
+  function rememberControlTap(timestamp) {
+    state.controlTapStartedAt = timestamp;
+    if (state.controlTapResetTimer) {
+      window.clearTimeout(state.controlTapResetTimer);
+      state.controlTapResetTimer = 0;
+    }
+
+    state.controlTapResetTimer = window.setTimeout(() => {
+      state.controlTapStartedAt = 0;
+      state.controlTapResetTimer = 0;
+    }, DOUBLE_CONTROL_WINDOW_MS);
+  }
+
+  function clearPendingControlTap() {
+    state.controlTapStartedAt = 0;
+    if (state.controlTapResetTimer) {
+      window.clearTimeout(state.controlTapResetTimer);
+      state.controlTapResetTimer = 0;
+    }
+  }
+
+  function handleVisibilityChange() {
+    if (document.hidden) {
+      clearPendingControlTap();
+    }
   }
 
   function ensureOverlay() {
