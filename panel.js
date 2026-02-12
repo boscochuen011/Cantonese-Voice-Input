@@ -384,7 +384,7 @@ async function insertTextIntoActiveTab(text, options = {}) {
       selection_missing: '無法讀取可編輯區域的游標位置。',
       unsupported_target: '目前焦點不是可支援的文字輸入欄。',
       unsupported_page: '不支援瀏覽器內部頁面，請開啟一般網站分頁。',
-      editor_insert_failed: '此網站編輯器拒絕非原生插字，請重新點選輸入欄後重試。',
+      editor_insert_failed: '此網站編輯器暫時拒絕插字，請先點一下輸入欄再重試。',
       tab_not_found: '找不到目前作用中的分頁。'
     };
 

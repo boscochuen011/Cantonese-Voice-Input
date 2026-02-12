@@ -117,15 +117,23 @@ async function insertTextInTab(tabId, payload) {
         return { ok: false, reason: 'selection_missing' };
       }
 
+      const editRoot = active.closest?.('[data-slate-editor="true"]') || active;
+
       const ensureCaretInsideTarget = () => {
         const range = document.createRange();
-        range.selectNodeContents(active);
+        range.selectNodeContents(editRoot);
         range.collapse(false);
         selection.removeAllRanges();
         selection.addRange(range);
       };
 
-      if (selection.rangeCount === 0 || !active.contains(selection.anchorNode)) {
+      const anchorNode = selection.anchorNode;
+      const anchorElement = anchorNode
+        ? (anchorNode.nodeType === Node.ELEMENT_NODE ? anchorNode : anchorNode.parentElement)
+        : null;
+      const inSlateZeroWidth = Boolean(anchorElement?.closest?.('[data-slate-zero-width]'));
+
+      if (selection.rangeCount === 0 || !editRoot.contains(selection.anchorNode) || inSlateZeroWidth) {
         ensureCaretInsideTarget();
       }
 
@@ -139,8 +147,22 @@ async function insertTextInTab(tabId, payload) {
       }
 
       if (!insertedByCommand) {
-        // For rich editors (e.g. Discord/WhatsApp), raw node insertion can desync editor state.
-        // We fail fast instead of forcing an unsafe insertion that can lock the input box.
+        const escaped = text
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/\n/g, '<br>');
+
+        if (typeof document.execCommand === 'function') {
+          try {
+            insertedByCommand = document.execCommand('insertHTML', false, escaped);
+          } catch (_error) {
+            insertedByCommand = false;
+          }
+        }
+      }
+
+      if (!insertedByCommand) {
         return { ok: false, reason: 'editor_insert_failed' };
       }
 

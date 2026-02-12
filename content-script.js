@@ -236,6 +236,14 @@
         return;
       }
 
+      if (response?.reason === 'editor_insert_failed') {
+        const inserted = insertTextLocally(payload);
+        if (inserted) {
+          setOverlayStatus('已插入文字。', 'ok', true);
+          return;
+        }
+      }
+
       const reasonToMessage = {
         no_target: '請先點選文字輸入欄，再連按兩下 Control。',
         unsupported_target: '目前焦點位置不支援插字。',
@@ -259,7 +267,7 @@
   }
 
   function insertTextLocally(payload) {
-    const target = getPreferredTarget() || state.target;
+    const target = getPreferredTarget() || state.target || findLikelyEditableTarget();
     if (!isSupportedTarget(target)) {
       return false;
     }
@@ -293,7 +301,13 @@
       return false;
     }
 
-    if (selection.rangeCount === 0 || !target.contains(selection.anchorNode)) {
+    const anchorNode = selection.anchorNode;
+    const anchorElement = anchorNode
+      ? (anchorNode.nodeType === Node.ELEMENT_NODE ? anchorNode : anchorNode.parentElement)
+      : null;
+    const inSlateZeroWidth = Boolean(anchorElement?.closest?.('[data-slate-zero-width]'));
+
+    if (selection.rangeCount === 0 || !target.contains(selection.anchorNode) || inSlateZeroWidth) {
       const range = document.createRange();
       range.selectNodeContents(target);
       range.collapse(false);
@@ -310,6 +324,25 @@
     } catch (_error) {
       return false;
     }
+  }
+
+  function findLikelyEditableTarget() {
+    const selector = [
+      '[contenteditable="true"][role="textbox"]',
+      '[contenteditable="true"]',
+      'textarea',
+      'input[type="text"]',
+      'input:not([type])'
+    ].join(', ');
+
+    const nodes = document.querySelectorAll(selector);
+    for (const node of nodes) {
+      if (isSupportedTarget(node)) {
+        return node;
+      }
+    }
+
+    return null;
   }
 
   function setupDoubleControlTrigger() {
