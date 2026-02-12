@@ -306,30 +306,56 @@
       editRoot?.getAttribute?.('data-slate-editor') === 'true'
       || editRoot?.closest?.('[data-slate-editor="true"]')
     );
+    const getAnchorElement = (node) => {
+      if (!node) {
+        return null;
+      }
+
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        return node;
+      }
+
+      return node.parentElement;
+    };
+    const isSelectionInSlateZeroWidth = () => {
+      if (!isSlateEditor || selection.rangeCount === 0) {
+        return false;
+      }
+
+      const anchorElement = getAnchorElement(selection.anchorNode);
+      return Boolean(anchorElement?.closest?.('[data-slate-zero-width]'));
+    };
 
     const ensureCaretInsideTarget = () => {
       const range = document.createRange();
       if (isSlateEditor) {
         const slateValue = editRoot.querySelector?.('[data-slate-node="value"]') || editRoot;
-        const zeroWidth = slateValue.querySelector?.('[data-slate-zero-width]');
-        const zeroWidthText = zeroWidth?.firstChild && zeroWidth.firstChild.nodeType === Node.TEXT_NODE
-          ? zeroWidth.firstChild
-          : null;
+        const walker = document.createTreeWalker(slateValue, NodeFilter.SHOW_TEXT, {
+          acceptNode(node) {
+            if (!node || typeof node.nodeValue !== 'string' || node.nodeValue.length === 0) {
+              return NodeFilter.FILTER_REJECT;
+            }
 
-        if (zeroWidthText) {
-          range.setStart(zeroWidthText, 0);
+            if (node.parentElement?.closest?.('[data-slate-zero-width]')) {
+              return NodeFilter.FILTER_REJECT;
+            }
+
+            return NodeFilter.FILTER_ACCEPT;
+          }
+        });
+
+        let lastTextNode = null;
+        while (walker.nextNode()) {
+          lastTextNode = walker.currentNode;
+        }
+
+        if (lastTextNode) {
+          const offset = lastTextNode.nodeValue.length;
+          range.setStart(lastTextNode, offset);
           range.collapse(true);
         } else {
-          const walker = document.createTreeWalker(slateValue, NodeFilter.SHOW_TEXT);
-          const textNode = walker.nextNode();
-          if (textNode) {
-            const offset = typeof textNode.nodeValue === 'string' ? textNode.nodeValue.length : 0;
-            range.setStart(textNode, offset);
-            range.collapse(true);
-          } else {
-            range.selectNodeContents(slateValue);
-            range.collapse(false);
-          }
+          range.selectNodeContents(slateValue);
+          range.collapse(false);
         }
       } else {
         range.selectNodeContents(editRoot);
@@ -340,7 +366,11 @@
       selection.addRange(range);
     };
 
-    if (selection.rangeCount === 0 || !editRoot.contains(selection.anchorNode)) {
+    if (
+      selection.rangeCount === 0
+      || !editRoot.contains(selection.anchorNode)
+      || isSelectionInSlateZeroWidth()
+    ) {
       ensureCaretInsideTarget();
     }
 
@@ -375,13 +405,30 @@
     ].join(', ');
 
     const nodes = document.querySelectorAll(selector);
+    let fallback = null;
     for (const node of nodes) {
-      if (isSupportedTarget(node)) {
+      if (!isSupportedTarget(node)) {
+        continue;
+      }
+
+      if (!fallback) {
+        fallback = node;
+      }
+
+      if (node instanceof Element) {
+        const style = window.getComputedStyle(node);
+        if (style.display !== 'none' && style.visibility !== 'hidden') {
+          const rect = node.getBoundingClientRect();
+          if (rect.width > 0 && rect.height > 0) {
+            return node;
+          }
+        }
+      } else {
         return node;
       }
     }
 
-    return null;
+    return fallback;
   }
 
   function setupDoubleControlTrigger() {

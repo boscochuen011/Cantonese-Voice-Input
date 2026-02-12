@@ -67,12 +67,84 @@ async function insertTextInTab(tabId, payload) {
     target: { tabId },
     world: 'MAIN',
     func: (text) => {
-      const active = document.activeElement;
+      const textInputTypes = new Set(['text', 'search', 'url', 'tel', 'password', 'email', 'number']);
+      const editableSelector = [
+        '[contenteditable="true"][role="textbox"]',
+        '[contenteditable="true"]',
+        'textarea',
+        'input[type="text"]',
+        'input[type="search"]',
+        'input[type="url"]',
+        'input[type="tel"]',
+        'input[type="password"]',
+        'input[type="email"]',
+        'input[type="number"]',
+        'input:not([type])'
+      ].join(', ');
+
+      const isTextEntryInput = (element) => {
+        if (element instanceof HTMLTextAreaElement) {
+          return !element.disabled && !element.readOnly;
+        }
+
+        if (element instanceof HTMLInputElement) {
+          return textInputTypes.has(element.type) && !element.disabled && !element.readOnly;
+        }
+
+        return false;
+      };
+
+      const isEditableElement = (element) => {
+        if (!element) {
+          return false;
+        }
+
+        return isTextEntryInput(element) || Boolean(element.isContentEditable);
+      };
+
+      const isVisibleElement = (element) => {
+        if (!(element instanceof Element)) {
+          return false;
+        }
+
+        const style = window.getComputedStyle(element);
+        if (style.display === 'none' || style.visibility === 'hidden') {
+          return false;
+        }
+
+        const rect = element.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+      };
+
+      const findLikelyEditableTarget = () => {
+        const candidates = document.querySelectorAll(editableSelector);
+        let fallback = null;
+
+        for (const candidate of candidates) {
+          if (!isEditableElement(candidate)) {
+            continue;
+          }
+
+          if (!fallback) {
+            fallback = candidate;
+          }
+
+          if (isVisibleElement(candidate)) {
+            return candidate;
+          }
+        }
+
+        return fallback;
+      };
+
+      const active = isEditableElement(document.activeElement)
+        ? document.activeElement
+        : findLikelyEditableTarget();
+
       if (!active) {
         return { ok: false, reason: 'no_target' };
       }
 
-      const textInputTypes = new Set(['text', 'search', 'url', 'tel', 'password', 'email', 'number']);
       const isTextArea = active instanceof HTMLTextAreaElement;
       const isTextInput = active instanceof HTMLInputElement && textInputTypes.has(active.type);
 
@@ -122,30 +194,56 @@ async function insertTextInTab(tabId, payload) {
         editRoot?.getAttribute?.('data-slate-editor') === 'true'
         || editRoot?.closest?.('[data-slate-editor="true"]')
       );
+      const getAnchorElement = (node) => {
+        if (!node) {
+          return null;
+        }
+
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          return node;
+        }
+
+        return node.parentElement;
+      };
+      const isSelectionInSlateZeroWidth = () => {
+        if (!isSlateEditor || selection.rangeCount === 0) {
+          return false;
+        }
+
+        const anchorElement = getAnchorElement(selection.anchorNode);
+        return Boolean(anchorElement?.closest?.('[data-slate-zero-width]'));
+      };
 
       const ensureCaretInsideTarget = () => {
         const range = document.createRange();
         if (isSlateEditor) {
           const slateValue = editRoot.querySelector?.('[data-slate-node="value"]') || editRoot;
-          const zeroWidth = slateValue.querySelector?.('[data-slate-zero-width]');
-          const zeroWidthText = zeroWidth?.firstChild && zeroWidth.firstChild.nodeType === Node.TEXT_NODE
-            ? zeroWidth.firstChild
-            : null;
+          const walker = document.createTreeWalker(slateValue, NodeFilter.SHOW_TEXT, {
+            acceptNode(node) {
+              if (!node || typeof node.nodeValue !== 'string' || node.nodeValue.length === 0) {
+                return NodeFilter.FILTER_REJECT;
+              }
 
-          if (zeroWidthText) {
-            range.setStart(zeroWidthText, 0);
+              if (node.parentElement?.closest?.('[data-slate-zero-width]')) {
+                return NodeFilter.FILTER_REJECT;
+              }
+
+              return NodeFilter.FILTER_ACCEPT;
+            }
+          });
+
+          let lastTextNode = null;
+          while (walker.nextNode()) {
+            lastTextNode = walker.currentNode;
+          }
+
+          if (lastTextNode) {
+            const offset = lastTextNode.nodeValue.length;
+            range.setStart(lastTextNode, offset);
             range.collapse(true);
           } else {
-            const walker = document.createTreeWalker(slateValue, NodeFilter.SHOW_TEXT);
-            let textNode = walker.nextNode();
-            if (textNode) {
-              const offset = typeof textNode.nodeValue === 'string' ? textNode.nodeValue.length : 0;
-              range.setStart(textNode, offset);
-              range.collapse(true);
-            } else {
-              range.selectNodeContents(slateValue);
-              range.collapse(false);
-            }
+            range.selectNodeContents(slateValue);
+            range.collapse(false);
           }
         } else {
           range.selectNodeContents(editRoot);
@@ -156,7 +254,11 @@ async function insertTextInTab(tabId, payload) {
         selection.addRange(range);
       };
 
-      if (selection.rangeCount === 0 || !editRoot.contains(selection.anchorNode)) {
+      if (
+        selection.rangeCount === 0
+        || !editRoot.contains(selection.anchorNode)
+        || isSelectionInSlateZeroWidth()
+      ) {
         ensureCaretInsideTarget();
       }
 

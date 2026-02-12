@@ -428,12 +428,76 @@ async function insertTextViaScriptingFallback(payload) {
     const [{ result }] = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       func: (text) => {
-        const active = document.activeElement;
+        const textInputTypes = new Set(['text', 'search', 'url', 'tel', 'password', 'email', 'number']);
+        const editableSelector = [
+          '[contenteditable="true"][role="textbox"]',
+          '[contenteditable="true"]',
+          'textarea',
+          'input[type="text"]',
+          'input[type="search"]',
+          'input[type="url"]',
+          'input[type="tel"]',
+          'input[type="password"]',
+          'input[type="email"]',
+          'input[type="number"]',
+          'input:not([type])'
+        ].join(', ');
+
+        const isTextEntryInput = (element) => {
+          if (element instanceof HTMLTextAreaElement) {
+            return !element.disabled && !element.readOnly;
+          }
+
+          if (element instanceof HTMLInputElement) {
+            return textInputTypes.has(element.type) && !element.disabled && !element.readOnly;
+          }
+
+          return false;
+        };
+
+        const isEditableElement = (element) => {
+          if (!element) {
+            return false;
+          }
+
+          return isTextEntryInput(element) || Boolean(element.isContentEditable);
+        };
+
+        const findLikelyEditableTarget = () => {
+          const nodes = document.querySelectorAll(editableSelector);
+          let fallback = null;
+
+          for (const node of nodes) {
+            if (!isEditableElement(node)) {
+              continue;
+            }
+
+            if (!fallback) {
+              fallback = node;
+            }
+
+            if (node instanceof Element) {
+              const style = window.getComputedStyle(node);
+              if (style.display !== 'none' && style.visibility !== 'hidden') {
+                const rect = node.getBoundingClientRect();
+                if (rect.width > 0 && rect.height > 0) {
+                  return node;
+                }
+              }
+            }
+          }
+
+          return fallback;
+        };
+
+        const active = isEditableElement(document.activeElement)
+          ? document.activeElement
+          : findLikelyEditableTarget();
+
         if (!active) {
           return false;
         }
 
-        const textInputTypes = new Set(['text', 'search', 'url', 'tel', 'password', 'email', 'number']);
         const isTextArea = active instanceof HTMLTextAreaElement;
         const isTextInput = active instanceof HTMLInputElement && textInputTypes.has(active.type);
 
@@ -465,12 +529,75 @@ async function insertTextViaScriptingFallback(payload) {
           return false;
         }
 
-        if (selection.rangeCount === 0 || !active.contains(selection.anchorNode)) {
+        const editRoot = active.closest?.('[data-slate-editor="true"]') || active;
+        const isSlateEditor = Boolean(
+          editRoot?.getAttribute?.('data-slate-editor') === 'true'
+          || editRoot?.closest?.('[data-slate-editor="true"]')
+        );
+        const getAnchorElement = (node) => {
+          if (!node) {
+            return null;
+          }
+
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            return node;
+          }
+
+          return node.parentElement;
+        };
+        const isSelectionInSlateZeroWidth = () => {
+          if (!isSlateEditor || selection.rangeCount === 0) {
+            return false;
+          }
+
+          const anchorElement = getAnchorElement(selection.anchorNode);
+          return Boolean(anchorElement?.closest?.('[data-slate-zero-width]'));
+        };
+        const ensureCaretInsideTarget = () => {
           const range = document.createRange();
-          range.selectNodeContents(active);
-          range.collapse(false);
+          if (isSlateEditor) {
+            const slateValue = editRoot.querySelector?.('[data-slate-node="value"]') || editRoot;
+            const walker = document.createTreeWalker(slateValue, NodeFilter.SHOW_TEXT, {
+              acceptNode(node) {
+                if (!node || typeof node.nodeValue !== 'string' || node.nodeValue.length === 0) {
+                  return NodeFilter.FILTER_REJECT;
+                }
+
+                if (node.parentElement?.closest?.('[data-slate-zero-width]')) {
+                  return NodeFilter.FILTER_REJECT;
+                }
+
+                return NodeFilter.FILTER_ACCEPT;
+              }
+            });
+
+            let lastTextNode = null;
+            while (walker.nextNode()) {
+              lastTextNode = walker.currentNode;
+            }
+
+            if (lastTextNode) {
+              range.setStart(lastTextNode, lastTextNode.nodeValue.length);
+              range.collapse(true);
+            } else {
+              range.selectNodeContents(slateValue);
+              range.collapse(false);
+            }
+          } else {
+            range.selectNodeContents(editRoot);
+            range.collapse(false);
+          }
+
           selection.removeAllRanges();
           selection.addRange(range);
+        };
+
+        if (
+          selection.rangeCount === 0
+          || !editRoot.contains(selection.anchorNode)
+          || isSelectionInSlateZeroWidth()
+        ) {
+          ensureCaretInsideTarget();
         }
 
         try {
