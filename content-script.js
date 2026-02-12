@@ -306,6 +306,17 @@
       editRoot?.getAttribute?.('data-slate-editor') === 'true'
       || editRoot?.closest?.('[data-slate-editor="true"]')
     );
+    const getSlateValueRoot = () => editRoot.querySelector?.('[data-slate-node="value"]') || editRoot;
+    const getSlatePlainText = () => {
+      if (!isSlateEditor) {
+        return '';
+      }
+
+      const slateValue = getSlateValueRoot();
+      const textParts = Array.from(slateValue.querySelectorAll?.('[data-slate-string]') || [])
+        .map((node) => node.textContent || '');
+      return textParts.join('');
+    };
     const getAnchorElement = (node) => {
       if (!node) {
         return null;
@@ -329,29 +340,42 @@
     const ensureCaretInsideTarget = () => {
       const range = document.createRange();
       if (isSlateEditor) {
-        const slateValue = editRoot.querySelector?.('[data-slate-node="value"]') || editRoot;
-        const walker = document.createTreeWalker(slateValue, NodeFilter.SHOW_TEXT, {
-          acceptNode(node) {
-            if (!node || typeof node.nodeValue !== 'string' || node.nodeValue.length === 0) {
-              return NodeFilter.FILTER_REJECT;
-            }
+        const slateValue = getSlateValueRoot();
+        const slateStrings = Array.from(slateValue.querySelectorAll?.('[data-slate-string]') || []);
+        let caretNode = null;
 
-            if (node.parentElement?.closest?.('[data-slate-zero-width]')) {
-              return NodeFilter.FILTER_REJECT;
-            }
-
-            return NodeFilter.FILTER_ACCEPT;
+        for (let i = slateStrings.length - 1; i >= 0; i -= 1) {
+          const element = slateStrings[i];
+          const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+          let lastText = null;
+          while (walker.nextNode()) {
+            lastText = walker.currentNode;
           }
-        });
 
-        let lastTextNode = null;
-        while (walker.nextNode()) {
-          lastTextNode = walker.currentNode;
+          if (lastText && typeof lastText.nodeValue === 'string') {
+            caretNode = lastText;
+            break;
+          }
         }
 
-        if (lastTextNode) {
-          const offset = lastTextNode.nodeValue.length;
-          range.setStart(lastTextNode, offset);
+        if (!caretNode) {
+          const zeroWidthNodes = Array.from(slateValue.querySelectorAll?.('[data-slate-zero-width]') || []);
+          for (let i = zeroWidthNodes.length - 1; i >= 0; i -= 1) {
+            const walker = document.createTreeWalker(zeroWidthNodes[i], NodeFilter.SHOW_TEXT);
+            let lastText = null;
+            while (walker.nextNode()) {
+              lastText = walker.currentNode;
+            }
+
+            if (lastText && typeof lastText.nodeValue === 'string') {
+              caretNode = lastText;
+              break;
+            }
+          }
+        }
+
+        if (caretNode) {
+          range.setStart(caretNode, caretNode.nodeValue.length);
           range.collapse(true);
         } else {
           range.selectNodeContents(slateValue);
@@ -374,6 +398,51 @@
       ensureCaretInsideTarget();
     }
 
+    const dispatchSlateBeforeInput = () => {
+      if (!isSlateEditor || typeof InputEvent !== 'function') {
+        return false;
+      }
+
+      try {
+        const event = new InputEvent('beforeinput', {
+          bubbles: true,
+          cancelable: true,
+          inputType: 'insertText',
+          data: payload
+        });
+        target.dispatchEvent(event);
+        return true;
+      } catch (_error) {
+        return false;
+      }
+    };
+    const dispatchSlateInput = () => {
+      if (!isSlateEditor) {
+        return;
+      }
+
+      try {
+        target.dispatchEvent(new InputEvent('input', {
+          bubbles: true,
+          inputType: 'insertText',
+          data: payload
+        }));
+      } catch (_error) {
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    };
+    const slateTextBefore = getSlatePlainText();
+    if (isSlateEditor) {
+      ensureCaretInsideTarget();
+      const dispatched = dispatchSlateBeforeInput();
+      if (dispatched) {
+        const slateTextAfterBeforeInput = getSlatePlainText();
+        if (slateTextAfterBeforeInput !== slateTextBefore) {
+          return true;
+        }
+      }
+    }
+
     const tryInsertText = () => {
       if (typeof document.execCommand !== 'function') {
         return false;
@@ -390,6 +459,14 @@
     if (!inserted && isSlateEditor) {
       ensureCaretInsideTarget();
       inserted = tryInsertText();
+    }
+
+    if (inserted && isSlateEditor) {
+      dispatchSlateInput();
+      const slateTextAfterInsert = getSlatePlainText();
+      if (slateTextAfterInsert === slateTextBefore) {
+        return false;
+      }
     }
 
     return inserted;
