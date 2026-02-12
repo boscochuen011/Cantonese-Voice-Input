@@ -535,16 +535,6 @@ async function insertTextViaScriptingFallback(payload) {
           || editRoot?.closest?.('[data-slate-editor="true"]')
         );
         const getSlateValueRoot = () => editRoot.querySelector?.('[data-slate-node="value"]') || editRoot;
-        const getSlatePlainText = () => {
-          if (!isSlateEditor) {
-            return '';
-          }
-
-          const slateValue = getSlateValueRoot();
-          const textParts = Array.from(slateValue.querySelectorAll?.('[data-slate-string]') || [])
-            .map((node) => node.textContent || '');
-          return textParts.join('');
-        };
         const getAnchorElement = (node) => {
           if (!node) {
             return null;
@@ -627,7 +617,7 @@ async function insertTextViaScriptingFallback(payload) {
 
         const dispatchSlateBeforeInput = () => {
           if (!isSlateEditor || typeof InputEvent !== 'function') {
-            return false;
+            return { dispatched: false, handled: false };
           }
 
           try {
@@ -637,36 +627,17 @@ async function insertTextViaScriptingFallback(payload) {
               inputType: 'insertText',
               data: text
             });
-            active.dispatchEvent(event);
-            return true;
+            const notCanceled = active.dispatchEvent(event);
+            return { dispatched: true, handled: !notCanceled };
           } catch (_error) {
-            return false;
+            return { dispatched: false, handled: false };
           }
         };
-        const dispatchSlateInput = () => {
-          if (!isSlateEditor) {
-            return;
-          }
-
-          try {
-            active.dispatchEvent(new InputEvent('input', {
-              bubbles: true,
-              inputType: 'insertText',
-              data: text
-            }));
-          } catch (_error) {
-            active.dispatchEvent(new Event('input', { bubbles: true }));
-          }
-        };
-        const slateTextBefore = getSlatePlainText();
         if (isSlateEditor) {
           ensureCaretInsideTarget();
-          const dispatched = dispatchSlateBeforeInput();
-          if (dispatched) {
-            const slateTextAfterBeforeInput = getSlatePlainText();
-            if (slateTextAfterBeforeInput !== slateTextBefore) {
-              return true;
-            }
+          const beforeInputResult = dispatchSlateBeforeInput();
+          if (beforeInputResult.handled) {
+            return true;
           }
         }
 
@@ -675,12 +646,6 @@ async function insertTextViaScriptingFallback(payload) {
           inserted = document.execCommand('insertText', false, text);
         } catch (_error) {
           inserted = false;
-        }
-
-        if (inserted && isSlateEditor) {
-          dispatchSlateInput();
-          const slateTextAfterInsert = getSlatePlainText();
-          return slateTextAfterInsert !== slateTextBefore;
         }
 
         return inserted;

@@ -307,16 +307,6 @@
       || editRoot?.closest?.('[data-slate-editor="true"]')
     );
     const getSlateValueRoot = () => editRoot.querySelector?.('[data-slate-node="value"]') || editRoot;
-    const getSlatePlainText = () => {
-      if (!isSlateEditor) {
-        return '';
-      }
-
-      const slateValue = getSlateValueRoot();
-      const textParts = Array.from(slateValue.querySelectorAll?.('[data-slate-string]') || [])
-        .map((node) => node.textContent || '');
-      return textParts.join('');
-    };
     const getAnchorElement = (node) => {
       if (!node) {
         return null;
@@ -400,7 +390,7 @@
 
     const dispatchSlateBeforeInput = () => {
       if (!isSlateEditor || typeof InputEvent !== 'function') {
-        return false;
+        return { dispatched: false, handled: false };
       }
 
       try {
@@ -410,36 +400,17 @@
           inputType: 'insertText',
           data: payload
         });
-        target.dispatchEvent(event);
-        return true;
+        const notCanceled = target.dispatchEvent(event);
+        return { dispatched: true, handled: !notCanceled };
       } catch (_error) {
-        return false;
+        return { dispatched: false, handled: false };
       }
     };
-    const dispatchSlateInput = () => {
-      if (!isSlateEditor) {
-        return;
-      }
-
-      try {
-        target.dispatchEvent(new InputEvent('input', {
-          bubbles: true,
-          inputType: 'insertText',
-          data: payload
-        }));
-      } catch (_error) {
-        target.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-    };
-    const slateTextBefore = getSlatePlainText();
     if (isSlateEditor) {
       ensureCaretInsideTarget();
-      const dispatched = dispatchSlateBeforeInput();
-      if (dispatched) {
-        const slateTextAfterBeforeInput = getSlatePlainText();
-        if (slateTextAfterBeforeInput !== slateTextBefore) {
-          return true;
-        }
+      const beforeInputResult = dispatchSlateBeforeInput();
+      if (beforeInputResult.handled) {
+        return true;
       }
     }
 
@@ -459,14 +430,6 @@
     if (!inserted && isSlateEditor) {
       ensureCaretInsideTarget();
       inserted = tryInsertText();
-    }
-
-    if (inserted && isSlateEditor) {
-      dispatchSlateInput();
-      const slateTextAfterInsert = getSlatePlainText();
-      if (slateTextAfterInsert === slateTextBefore) {
-        return false;
-      }
     }
 
     return inserted;
