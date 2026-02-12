@@ -516,7 +516,6 @@
       state.controlTapResetTimer = 0;
     }, DOUBLE_CONTROL_WINDOW_MS);
 
-    setOverlayStatus('快捷鍵已啟動\n再按一次 Control 開始錄音（要先揀文字輸入欄）', 'neutral', true);
   }
 
   function clearPendingControlTap() {
