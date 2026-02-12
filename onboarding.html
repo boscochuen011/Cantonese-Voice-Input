@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cantonese Voice Input - Setup Wizard</title>
+  <link rel="stylesheet" href="onboarding.css">
+</head>
+<body>
+  <main class="wizard">
+    <header class="hero">
+      <img class="app-icon" src="icons/icon-128.png" alt="Cantonese Voice Input icon">
+      <p class="eyebrow">Cantonese Voice Input</p>
+      <h1>Setup Wizard</h1>
+      <p class="lead">Finish these 3 steps once. After that, users can use the extension like a production plugin.</p>
+    </header>
+
+    <section class="steps" aria-label="Setup steps">
+      <article class="step-card" data-step="extensions">
+        <div class="step-title">
+          <span class="step-index">1</span>
+          <h2>Extension &amp; Pin</h2>
+        </div>
+        <p>Open Chrome extensions page, confirm this extension is enabled, and pin it on toolbar.</p>
+        <div class="step-actions">
+          <button id="openExtensionsBtn" class="action-btn" type="button">Open chrome://extensions</button>
+        </div>
+        <label class="step-check">
+          <input type="checkbox" data-step-check="extensions">
+          <span>I finished this step</span>
+        </label>
+      </article>
+
+      <article class="step-card" data-step="permission">
+        <div class="step-title">
+          <span class="step-index">2</span>
+          <h2>Microphone Permission</h2>
+        </div>
+        <p>Allow microphone access on your target website, so voice recognition can run without interruption.</p>
+        <p id="currentSiteLabel" class="step-note">Detecting current site...</p>
+        <div class="step-actions">
+          <button id="openSitePermissionBtn" class="action-btn" type="button">Open current site permission</button>
+          <button id="openMicrophoneSettingsBtn" class="ghost-btn" type="button">Open global microphone settings</button>
+        </div>
+        <label class="step-check">
+          <input type="checkbox" data-step-check="permission">
+          <span>I finished this step</span>
+        </label>
+      </article>
+
+      <article class="step-card" data-step="shortcut">
+        <div class="step-title">
+          <span class="step-index">3</span>
+          <h2>Shortcut Mapping</h2>
+        </div>
+        <p>Open shortcut settings and keep your quick workflow. Recommended: keep using double-press <code>Control</code> inside webpage.</p>
+        <div class="step-actions">
+          <button id="openShortcutsBtn" class="action-btn" type="button">Open chrome://extensions/shortcuts</button>
+        </div>
+        <label class="step-check">
+          <input type="checkbox" data-step-check="shortcut">
+          <span>I finished this step</span>
+        </label>
+      </article>
+    </section>
+
+    <section class="finish-card">
+      <p id="progressText" class="progress">0 / 3 steps completed.</p>
+      <div class="finish-actions">
+        <button id="completeSetupBtn" class="complete-btn" type="button" disabled>Complete Setup</button>
+        <button id="skipSetupBtn" class="ghost-btn" type="button">Skip for now</button>
+      </div>
+      <p id="finishMessage" class="finish-message" hidden>Setup status saved. You can close this tab and use the extension.</p>
+    </section>
+  </main>
+
+  <script src="onboarding.js"></script>
+</body>
+</html>

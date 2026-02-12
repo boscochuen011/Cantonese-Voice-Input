@@ -41,6 +41,7 @@ body {
 }
 
 .hero,
+.setup-card,
 .action-card {
   width: min(100%, 520px);
   background: var(--card);
@@ -77,6 +78,62 @@ body {
   display: grid;
   gap: 10px;
   animation-delay: 60ms;
+}
+
+.setup-card {
+  display: grid;
+  gap: 12px;
+  animation-delay: 40ms;
+}
+
+.setup-card h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.setup-desc {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.setup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.setup-link-btn,
+.finish-setup-btn {
+  min-height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: #24314f;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 11px;
+  cursor: pointer;
+  transition: border-color 120ms ease, transform 120ms ease, background 120ms ease;
+}
+
+.setup-link-btn:hover,
+.finish-setup-btn:hover {
+  border-color: #b8c4de;
+  background: #f9fbff;
+  transform: translateY(-1px);
+}
+
+.setup-link-btn:active,
+.finish-setup-btn:active {
+  transform: translateY(0);
+}
+
+.finish-setup-btn {
+  border-color: var(--primary);
+  color: var(--primary-strong);
 }
 
 .speak-btn {
@@ -190,6 +247,7 @@ body {
   }
 
   .hero,
+  .setup-card,
   .action-card {
     padding: 14px;
   }

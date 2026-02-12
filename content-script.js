@@ -97,7 +97,7 @@
 
     recognition.onstart = () => {
       state.listening = true;
-      setOverlayStatus('Recording... speak now', 'ok', false);
+      setOverlayStatus('Recording\nSpeak now', 'ok', false);
     };
 
     recognition.onresult = (event) => {
@@ -121,7 +121,7 @@
 
       const preview = state.interimText || state.finalText;
       if (preview) {
-        setOverlayStatus(`Recording... ${clipText(preview, 40)}`, 'ok', false);
+        setOverlayStatus(`Recording\n${preview}`, 'ok', false);
       }
     };
 
@@ -274,14 +274,6 @@
     return false;
   }
 
-  function clipText(text, maxLength) {
-    if (text.length <= maxLength) {
-      return text;
-    }
-
-    return `${text.slice(0, maxLength - 1)}...`;
-  }
-
   function setupDoubleControlTrigger() {
     window.addEventListener('keydown', handleDoubleControlKeydown, true);
     window.addEventListener('blur', clearPendingControlTap, true);
@@ -326,6 +318,8 @@
       state.controlTapStartedAt = 0;
       state.controlTapResetTimer = 0;
     }, DOUBLE_CONTROL_WINDOW_MS);
+
+    setOverlayStatus('Shortcut armed\nPress Control again to record', 'neutral', true);
   }
 
   function clearPendingControlTap() {
@@ -353,7 +347,10 @@
     root.innerHTML = `
       <div class="quick-voice-pill quick-voice-neutral">
         <span class="quick-voice-dot" aria-hidden="true"></span>
-        <span class="quick-voice-text">Ready</span>
+        <div class="quick-voice-body">
+          <span class="quick-voice-chip">2x Ctrl</span>
+          <span class="quick-voice-text">Ready</span>
+        </div>
       </div>
     `;
 
@@ -377,17 +374,18 @@
         font-family: "Segoe UI", "PingFang HK", "Microsoft JhengHei", sans-serif;
       }
       #${OVERLAY_ID} .quick-voice-pill {
-        display: inline-flex;
-        align-items: center;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        align-items: start;
         gap: 8px;
-        max-width: min(80vw, 320px);
-        padding: 8px 10px;
-        border-radius: 999px;
+        width: min(86vw, 360px);
+        padding: 10px 12px;
+        border-radius: 14px;
         border: 1px solid #d7deea;
         background: rgba(255, 255, 255, 0.96);
         color: #172033;
         font-size: 12px;
-        line-height: 1.2;
+        line-height: 1.35;
         box-shadow: 0 10px 20px rgba(17, 25, 40, 0.12);
       }
       #${OVERLAY_ID} .quick-voice-dot {
@@ -396,11 +394,30 @@
         border-radius: 50%;
         background: #7a869f;
         flex: 0 0 auto;
+        margin-top: 5px;
+      }
+      #${OVERLAY_ID} .quick-voice-body {
+        min-width: 0;
+        display: grid;
+        gap: 5px;
+      }
+      #${OVERLAY_ID} .quick-voice-chip {
+        justify-self: start;
+        border: 1px solid #cad4e7;
+        border-radius: 999px;
+        background: #f6f9ff;
+        color: #4a5980;
+        padding: 1px 8px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
       }
       #${OVERLAY_ID} .quick-voice-text {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        display: block;
+        overflow-y: auto;
+        max-height: 88px;
+        white-space: pre-wrap;
+        word-break: break-word;
       }
       #${OVERLAY_ID} .quick-voice-ok .quick-voice-dot {
         background: #d83b20;

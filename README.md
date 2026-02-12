@@ -19,6 +19,19 @@ Press once, speak, and your text is inserted into the currently focused input fi
 4. Click **Load unpacked**
 5. Select this project folder
 
+## First-time Setup Wizard
+
+On first install, the extension automatically opens a new tab: `onboarding.html`.
+
+The wizard provides 3 guided steps:
+
+1. Open `chrome://extensions/` for enable/pin checks
+2. Open current site permission settings and set **Microphone = Allow**
+3. Open `chrome://extensions/shortcuts` for shortcut mapping
+
+After finishing all steps, click **Complete Setup**.  
+You can reopen the wizard from the side panel via **Open Setup Wizard**.
+
 ## Usage
 
 ### Side Panel
@@ -53,9 +66,13 @@ If shortcut appears to do nothing:
 - `manifest.json` - Chrome extension manifest (MV3)
 - `service-worker.js` - background/service worker logic
 - `content-script.js` - in-page quick voice overlay and insert flow
+- `onboarding.html` - first-install setup wizard page
+- `onboarding.css` - setup wizard styling
+- `onboarding.js` - setup wizard logic
 - `panel.html` - side panel markup
 - `panel.css` - side panel styling
 - `panel.js` - side panel interaction logic
+- `icons/` - packaged extension icon sizes (`16/32/48/128`)
 
 ## Publishing Checklist
 

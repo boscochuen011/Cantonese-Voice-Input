@@ -1,10 +1,15 @@
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const BLOCKED_URL_SCHEMES = ['chrome://', 'chrome-extension://', 'edge://', 'about:'];
+const FIRST_RUN_SETUP_KEY = 'firstRunSetupDone';
+const ONBOARDING_PAGE_URL = chrome.runtime.getURL('onboarding.html');
 
 const ui = {
   speakInsertBtn: document.getElementById('speakInsertBtn'),
   status: document.getElementById('status'),
-  shortcutHint: document.getElementById('shortcutHint')
+  shortcutHint: document.getElementById('shortcutHint'),
+  firstRunSetup: document.getElementById('firstRunSetup'),
+  openSetupWizardBtn: document.getElementById('openSetupWizardBtn'),
+  finishSetupBtn: document.getElementById('finishSetupBtn')
 };
 
 const state = {
@@ -21,7 +26,9 @@ init();
 
 function init() {
   ui.speakInsertBtn.addEventListener('click', handleSpeakInsertClick);
+  wireSetupActions();
   setShortcutHint();
+  void refreshFirstRunSetup();
 
   if (!SpeechRecognition) {
     ui.speakInsertBtn.disabled = true;
@@ -31,6 +38,59 @@ function init() {
 
   updateButton();
   setStatus('Click a text box on page, then press Speak & Insert.', 'neutral');
+}
+
+function wireSetupActions() {
+  ui.openSetupWizardBtn?.addEventListener('click', () => {
+    void openSetupWizard();
+  });
+
+  ui.finishSetupBtn?.addEventListener('click', () => {
+    void markSetupAsCompleted();
+  });
+}
+
+async function refreshFirstRunSetup() {
+  if (!ui.firstRunSetup) {
+    return;
+  }
+
+  let done = false;
+  try {
+    const saved = await chrome.storage.local.get({ [FIRST_RUN_SETUP_KEY]: false });
+    done = Boolean(saved[FIRST_RUN_SETUP_KEY]);
+  } catch (_error) {
+    done = false;
+  }
+
+  ui.firstRunSetup.hidden = done;
+}
+
+async function markSetupAsCompleted() {
+  try {
+    await chrome.storage.local.set({
+      [FIRST_RUN_SETUP_KEY]: true,
+      onboardingCompletedAt: new Date().toISOString()
+    });
+  } catch (_error) {
+    // Ignore storage failures and still allow user to close setup card in this session.
+  }
+
+  if (ui.firstRunSetup) {
+    ui.firstRunSetup.hidden = true;
+  }
+
+  setStatus('Setup marked as complete.', 'ok');
+}
+
+async function openSetupWizard() {
+  try {
+    await chrome.tabs.create({ url: ONBOARDING_PAGE_URL });
+    setStatus('Setup wizard opened in a new tab.', 'neutral');
+  } catch (_error) {
+    window.open(ONBOARDING_PAGE_URL, '_blank', 'noopener');
+    setStatus('Setup wizard opened in a new tab.', 'neutral');
+  }
 }
 
 function setShortcutHint() {
