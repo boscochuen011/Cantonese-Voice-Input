@@ -74,7 +74,7 @@
 
     const target = getPreferredTarget();
     if (!target) {
-      setOverlayStatus('請先點選文字輸入欄，再連按兩下 Control。', 'warn', true);
+      setOverlayStatus('此位置無法輸入（例如主介面或無輸入欄）。請先點選文字欄，再連按兩下 Control。', 'warn', true);
       return { ok: false, reason: 'no_target' };
     }
 
@@ -319,7 +319,7 @@
       state.controlTapResetTimer = 0;
     }, DOUBLE_CONTROL_WINDOW_MS);
 
-    setOverlayStatus('快捷鍵已啟動\n再按一次 Control 開始錄音', 'neutral', true);
+    setOverlayStatus('快捷鍵已啟動\n再按一次 Control 開始錄音（需先選取文字輸入欄）', 'neutral', true);
   }
 
   function clearPendingControlTap() {

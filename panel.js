@@ -333,7 +333,7 @@ async function ensureInsertTargetReady() {
     }
 
     const reasonToMessage = {
-      no_target: '請先在網頁點選文字輸入欄。',
+      no_target: '請先在網頁點選文字輸入欄；主介面或無輸入欄位置無法插入文字。',
       unsupported_target: '目前焦點不是可支援的文字輸入欄。'
     };
 
@@ -440,7 +440,7 @@ async function insertTextIntoActiveTab(text, options = {}) {
     }
 
     const reasonToMessage = {
-      no_target: '請先在網頁點選文字輸入欄。',
+      no_target: '請先在網頁點選文字輸入欄；主介面或無輸入欄位置無法插入文字。',
       selection_missing: '無法讀取可編輯區域的游標位置。',
       unsupported_target: '目前焦點不是可支援的文字輸入欄。'
     };

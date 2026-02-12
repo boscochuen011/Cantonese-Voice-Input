@@ -12,7 +12,7 @@
       <img class="app-icon" src="icons/icon-128.png" alt="廣東話語音輸入圖示">
       <p class="eyebrow">廣東話語音輸入</p>
       <h1>設定精靈</h1>
-      <p class="lead">首次使用只需完成以下 3 個步驟，完成後即可順暢使用。</p>
+      <p class="lead">首次使用只需完成以下 2 個步驟，完成後即可順暢使用。</p>
     </header>
 
     <section class="steps" aria-label="設定步驟">
@@ -48,24 +48,18 @@
         </label>
       </article>
 
-      <article class="step-card" data-step="shortcut">
-        <div class="step-title">
-          <span class="step-index">3</span>
-          <h2>快捷鍵設定</h2>
-        </div>
-        <p>開啟快捷鍵設定，維持你的快速流程。建議保留網頁內連按兩下 <code>Control</code>。</p>
-        <div class="step-actions">
-          <button id="openShortcutsBtn" class="action-btn" type="button">開啟 chrome://extensions/shortcuts</button>
-        </div>
-        <label class="step-check">
-          <input type="checkbox" data-step-check="shortcut">
-          <span>我已完成此步驟</span>
-        </label>
-      </article>
+    </section>
+
+    <section class="tips-card" aria-label="使用提醒">
+      <h2>使用提醒</h2>
+      <ul>
+        <li>在一般網頁內，連按兩下 <code>Control</code> 即可啟動語音輸入。</li>
+        <li>主介面頁面、瀏覽器內部頁（例如 <code>chrome://</code>）或沒有文字輸入欄的位置，無法透過此輸入法直接插入文字。</li>
+      </ul>
     </section>
 
     <section class="finish-card">
-      <p id="progressText" class="progress">已完成 0 / 3 步。</p>
+      <p id="progressText" class="progress">已完成 0 / 2 步。</p>
       <div class="finish-actions">
         <button id="completeSetupBtn" class="complete-btn" type="button" disabled>完成設定</button>
         <button id="skipSetupBtn" class="ghost-btn" type="button">稍後再做</button>

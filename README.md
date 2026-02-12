@@ -23,14 +23,17 @@ Press once, speak, and your text is inserted into the currently focused input fi
 
 On first install, the extension automatically opens a new tab: `onboarding.html`.
 
-The wizard provides 3 guided steps:
+The wizard provides 2 guided steps:
 
 1. Open `chrome://extensions/` for enable/pin checks
 2. Open current site permission settings and set **Microphone = Allow**
-3. Open `chrome://extensions/shortcuts` for shortcut mapping
 
 After finishing all steps, click **Complete Setup**.  
 You can reopen the wizard from the side panel via **Open Setup Wizard**.
+
+Setup page reminders:
+- In normal websites, double-press `Control` to start quick voice input.
+- Main interface pages or places without text fields cannot use this input flow.
 
 ## Usage
 
@@ -73,6 +76,7 @@ If shortcut appears to do nothing:
 - `panel.css` - side panel styling
 - `panel.js` - side panel interaction logic
 - `icons/` - packaged extension icon sizes (`16/32/48/128`)
+- `webstore/` - Chrome Web Store submission docs and screenshots
 
 ## Publishing Checklist
 

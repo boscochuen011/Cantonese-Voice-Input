@@ -2,13 +2,12 @@ const FIRST_RUN_SETUP_KEY = 'firstRunSetupDone';
 const SETUP_PROGRESS_KEY = 'setupProgress';
 const MICROPHONE_SETTINGS_URL = 'chrome://settings/content/microphone';
 const NORMAL_URL_PROTOCOLS = new Set(['http:', 'https:']);
-const STEP_IDS = ['extensions', 'permission', 'shortcut'];
+const STEP_IDS = ['extensions', 'permission'];
 
 const ui = {
   openExtensionsBtn: document.getElementById('openExtensionsBtn'),
   openSitePermissionBtn: document.getElementById('openSitePermissionBtn'),
   openMicrophoneSettingsBtn: document.getElementById('openMicrophoneSettingsBtn'),
-  openShortcutsBtn: document.getElementById('openShortcutsBtn'),
   currentSiteLabel: document.getElementById('currentSiteLabel'),
   progressText: document.getElementById('progressText'),
   completeSetupBtn: document.getElementById('completeSetupBtn'),
@@ -40,11 +39,6 @@ function wireActions() {
 
   ui.openMicrophoneSettingsBtn?.addEventListener('click', async () => {
     await openChromeTab(MICROPHONE_SETTINGS_URL);
-  });
-
-  ui.openShortcutsBtn?.addEventListener('click', async () => {
-    await openChromeTab('chrome://extensions/shortcuts');
-    markStepDone('shortcut');
   });
 
   ui.stepChecks.forEach((checkbox) => {

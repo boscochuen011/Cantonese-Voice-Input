@@ -40,6 +40,7 @@ body {
 
 .hero,
 .step-card,
+.tips-card,
 .finish-card {
   background: var(--card);
   border: 1px solid var(--line);
@@ -84,7 +85,7 @@ body {
 
 .steps {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -204,6 +205,30 @@ body {
   background: #0f766e;
   color: #fff;
   border-color: #0f766e;
+}
+
+.tips-card {
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.tips-card h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.tips-card ul {
+  margin: 0;
+  padding-left: 19px;
+  display: grid;
+  gap: 8px;
+}
+
+.tips-card li {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink);
 }
 
 .finish-card {
