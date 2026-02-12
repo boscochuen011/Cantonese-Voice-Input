@@ -254,20 +254,53 @@
         return false;
       }
 
-      if (selection.rangeCount === 0) {
+      const ensureCaretInsideTarget = () => {
         const range = document.createRange();
         range.selectNodeContents(target);
         range.collapse(false);
         selection.removeAllRanges();
         selection.addRange(range);
+      };
+
+      if (selection.rangeCount === 0 || !target.contains(selection.anchorNode)) {
+        ensureCaretInsideTarget();
+      }
+
+      let insertedByCommand = false;
+      if (typeof document.execCommand === 'function') {
+        try {
+          insertedByCommand = document.execCommand('insertText', false, payload);
+        } catch (_error) {
+          insertedByCommand = false;
+        }
+      }
+
+      if (insertedByCommand) {
+        return true;
+      }
+
+      if (selection.rangeCount === 0) {
+        ensureCaretInsideTarget();
       }
 
       const range = selection.getRangeAt(0);
       range.deleteContents();
-      range.insertNode(document.createTextNode(payload));
-      range.collapse(false);
+      const textNode = document.createTextNode(payload);
+      range.insertNode(textNode);
+      range.setStartAfter(textNode);
+      range.collapse(true);
       selection.removeAllRanges();
       selection.addRange(range);
+
+      try {
+        target.dispatchEvent(new InputEvent('input', {
+          bubbles: true,
+          inputType: 'insertText',
+          data: payload
+        }));
+      } catch (_error) {
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+      }
       return true;
     }
 

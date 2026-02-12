@@ -413,19 +413,53 @@ async function insertTextIntoActiveTab(text, options = {}) {
             return { ok: false, reason: 'selection_missing' };
           }
 
-          if (selection.rangeCount === 0) {
+          const ensureCaretInsideTarget = () => {
             const range = document.createRange();
             range.selectNodeContents(active);
             range.collapse(false);
+            selection.removeAllRanges();
             selection.addRange(range);
+          };
+
+          if (selection.rangeCount === 0 || !active.contains(selection.anchorNode)) {
+            ensureCaretInsideTarget();
+          }
+
+          let insertedByCommand = false;
+          if (typeof document.execCommand === 'function') {
+            try {
+              insertedByCommand = document.execCommand('insertText', false, payload);
+            } catch (_error) {
+              insertedByCommand = false;
+            }
+          }
+
+          if (insertedByCommand) {
+            return { ok: true };
+          }
+
+          if (selection.rangeCount === 0) {
+            ensureCaretInsideTarget();
           }
 
           const range = selection.getRangeAt(0);
           range.deleteContents();
-          range.insertNode(document.createTextNode(payload));
-          range.collapse(false);
+          const textNode = document.createTextNode(payload);
+          range.insertNode(textNode);
+          range.setStartAfter(textNode);
+          range.collapse(true);
           selection.removeAllRanges();
           selection.addRange(range);
+
+          try {
+            active.dispatchEvent(new InputEvent('input', {
+              bubbles: true,
+              inputType: 'insertText',
+              data: payload
+            }));
+          } catch (_error) {
+            active.dispatchEvent(new Event('input', { bubbles: true }));
+          }
           return { ok: true };
         }
 
