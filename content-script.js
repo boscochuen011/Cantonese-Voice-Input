@@ -62,19 +62,19 @@
     ensureOverlay();
 
     if (!SpeechRecognition) {
-      setOverlayStatus('This page does not support voice recognition.', 'warn', true);
+      setOverlayStatus('此頁面不支援語音辨識。', 'warn', true);
       return { ok: false, reason: 'speech_unsupported' };
     }
 
     if (state.listening) {
       stopCurrentRecognition();
-      setOverlayStatus('Stopped.', 'warn', true);
+      setOverlayStatus('已停止。', 'warn', true);
       return { ok: true, reason: 'stopped' };
     }
 
     const target = getPreferredTarget();
     if (!target) {
-      setOverlayStatus('Click inside a text box, then double-press Control again.', 'warn', true);
+      setOverlayStatus('請先點選文字輸入欄，再連按兩下 Control。', 'warn', true);
       return { ok: false, reason: 'no_target' };
     }
 
@@ -97,7 +97,7 @@
 
     recognition.onstart = () => {
       state.listening = true;
-      setOverlayStatus('Recording\nSpeak now', 'ok', false);
+      setOverlayStatus('錄音中\n請開始說話', 'ok', false);
     };
 
     recognition.onresult = (event) => {
@@ -121,21 +121,21 @@
 
       const preview = state.interimText || state.finalText;
       if (preview) {
-        setOverlayStatus(`Recording\n${preview}`, 'ok', false);
+        setOverlayStatus(`錄音中\n${preview}`, 'ok', false);
       }
     };
 
     recognition.onerror = (event) => {
       state.lastError = event.error || '';
       const messageMap = {
-        'not-allowed': 'Microphone permission denied.',
-        'service-not-allowed': 'Speech service was blocked by browser settings.',
-        'audio-capture': 'No microphone detected.',
-        'no-speech': 'No speech detected.',
-        network: 'Network error.',
-        aborted: 'Recording aborted.'
+        'not-allowed': '麥克風權限被拒絕。',
+        'service-not-allowed': '瀏覽器設定封鎖了語音服務。',
+        'audio-capture': '找不到麥克風。',
+        'no-speech': '未偵測到語音。',
+        network: '網路錯誤。',
+        aborted: '錄音已中止。'
       };
-      setOverlayStatus(messageMap[event.error] || `Voice error: ${event.error}`, 'warn', true);
+      setOverlayStatus(messageMap[event.error] || `語音錯誤：${event.error}`, 'warn', true);
     };
 
     recognition.onend = () => {
@@ -146,15 +146,15 @@
       if (payload) {
         const inserted = insertIntoTarget(state.target, payload) || insertIntoTarget(getPreferredTarget(), payload);
         if (inserted) {
-          setOverlayStatus('Inserted.', 'ok', true);
+          setOverlayStatus('已插入文字。', 'ok', true);
         } else {
-          setOverlayStatus('No valid text target to insert.', 'warn', true);
+          setOverlayStatus('找不到可插入文字的位置。', 'warn', true);
         }
         return;
       }
 
       if (!state.lastError) {
-        setOverlayStatus('No speech captured.', 'warn', true);
+        setOverlayStatus('未擷取到語音。', 'warn', true);
       }
     };
 
@@ -164,7 +164,7 @@
       recognition.start();
       return { ok: true };
     } catch (error) {
-      setOverlayStatus(`Failed to start: ${error.message}`, 'warn', true);
+      setOverlayStatus(`開始失敗：${error.message}`, 'warn', true);
       return { ok: false, reason: 'start_failed' };
     }
   }
@@ -180,7 +180,7 @@
 
   async function ensureMicrophonePermission() {
     if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
-      setOverlayStatus('This page cannot request microphone access.', 'warn', true);
+      setOverlayStatus('此頁面無法要求麥克風權限。', 'warn', true);
       return false;
     }
 
@@ -192,11 +192,11 @@
       return true;
     } catch (error) {
       if (error?.name === 'NotAllowedError') {
-        setOverlayStatus('Microphone access denied. Please allow microphone.', 'warn', true);
+        setOverlayStatus('麥克風權限被拒絕，請改為允許。', 'warn', true);
       } else if (error?.name === 'NotFoundError') {
-        setOverlayStatus('No microphone found.', 'warn', true);
+        setOverlayStatus('找不到可用麥克風。', 'warn', true);
       } else {
-        setOverlayStatus(`Microphone request failed: ${error?.message || 'unknown error'}`, 'warn', true);
+        setOverlayStatus(`麥克風請求失敗：${error?.message || '未知錯誤'}`, 'warn', true);
       }
       return false;
     }
@@ -319,7 +319,7 @@
       state.controlTapResetTimer = 0;
     }, DOUBLE_CONTROL_WINDOW_MS);
 
-    setOverlayStatus('Shortcut armed\nPress Control again to record', 'neutral', true);
+    setOverlayStatus('快捷鍵已啟動\n再按一次 Control 開始錄音', 'neutral', true);
   }
 
   function clearPendingControlTap() {
@@ -349,7 +349,7 @@
         <span class="quick-voice-dot" aria-hidden="true"></span>
         <div class="quick-voice-body">
           <span class="quick-voice-chip">2x Ctrl</span>
-          <span class="quick-voice-text">Ready</span>
+          <span class="quick-voice-text">準備就緒</span>
         </div>
       </div>
     `;

@@ -32,12 +32,12 @@ function init() {
 
   if (!SpeechRecognition) {
     ui.speakInsertBtn.disabled = true;
-    setStatus('This Chrome build does not support speech recognition API.', 'bad');
+    setStatus('此 Chrome 版本不支援語音辨識 API。', 'bad');
     return;
   }
 
   updateButton();
-  setStatus('Click a text box on page, then press Speak & Insert.', 'neutral');
+  setStatus('先在網頁點選文字輸入欄，再按「語音輸入」。', 'neutral');
 }
 
 function wireSetupActions() {
@@ -80,16 +80,16 @@ async function markSetupAsCompleted() {
     ui.firstRunSetup.hidden = true;
   }
 
-  setStatus('Setup marked as complete.', 'ok');
+  setStatus('已標記為完成設定。', 'ok');
 }
 
 async function openSetupWizard() {
   try {
     await chrome.tabs.create({ url: ONBOARDING_PAGE_URL });
-    setStatus('Setup wizard opened in a new tab.', 'neutral');
+    setStatus('已在新分頁開啟設定精靈。', 'neutral');
   } catch (_error) {
     window.open(ONBOARDING_PAGE_URL, '_blank', 'noopener');
-    setStatus('Setup wizard opened in a new tab.', 'neutral');
+    setStatus('已在新分頁開啟設定精靈。', 'neutral');
   }
 }
 
@@ -98,7 +98,7 @@ function setShortcutHint() {
     return;
   }
 
-  ui.shortcutHint.textContent = 'Quick flow: double-press Control on page.';
+  ui.shortcutHint.textContent = '快速操作：在網頁內連按兩下 Control。';
 }
 
 async function handleSpeakInsertClick() {
@@ -139,7 +139,7 @@ async function startListening() {
     state.starting = false;
     state.recognition = null;
     updateButton();
-    setStatus(`Failed to start: ${error.message}`, 'bad');
+    setStatus(`開始失敗：${error.message}`, 'bad');
   }
 }
 
@@ -152,9 +152,9 @@ function stopListening() {
 
   try {
     state.recognition.stop();
-    setStatus('Stopping...', 'neutral');
+    setStatus('正在停止...', 'neutral');
   } catch (error) {
-    setStatus(`Failed to stop: ${error.message}`, 'warn');
+    setStatus(`停止失敗：${error.message}`, 'warn');
   }
 }
 
@@ -169,7 +169,7 @@ function buildRecognition(language) {
     state.starting = false;
     state.listening = true;
     updateButton();
-    setStatus('Listening... speak now.', 'ok');
+    setStatus('正在聆聽，請開始說話。', 'ok');
   };
 
   recognition.onresult = (event) => {
@@ -196,15 +196,15 @@ function buildRecognition(language) {
     state.lastError = event.error || '';
 
     const messages = {
-      'not-allowed': 'Microphone permission denied. Enable it from the lock icon.',
-      'service-not-allowed': 'Speech recognition service was blocked by browser settings.',
-      'audio-capture': 'No working microphone was found.',
-      'no-speech': 'No speech was detected.',
-      network: 'Network error interrupted speech recognition.',
-      aborted: 'Speech recognition was aborted.'
+      'not-allowed': '未授權麥克風。請在網址列鎖頭圖示中允許。',
+      'service-not-allowed': '瀏覽器設定封鎖了語音辨識服務。',
+      'audio-capture': '找不到可用的麥克風。',
+      'no-speech': '偵測不到語音輸入。',
+      network: '網路錯誤中斷了語音辨識。',
+      aborted: '語音辨識已中止。'
     };
 
-    setStatus(messages[event.error] || `Speech recognition error: ${event.error}`, 'warn');
+    setStatus(messages[event.error] || `語音辨識錯誤：${event.error}`, 'warn');
   };
 
   recognition.onend = () => {
@@ -215,7 +215,7 @@ function buildRecognition(language) {
 
     const payload = (state.finalText || state.interimText).trim();
     if (payload) {
-      void insertTextIntoActiveTab(payload, { successMessage: 'Done. Inserted into page.' });
+      void insertTextIntoActiveTab(payload, { successMessage: '完成，已插入文字。' });
       return;
     }
 
@@ -224,11 +224,11 @@ function buildRecognition(language) {
     }
 
     if (state.manualStop) {
-      setStatus('Stopped.', 'neutral');
+      setStatus('已停止。', 'neutral');
       return;
     }
 
-    setStatus('No speech captured. Try again.', 'warn');
+    setStatus('未擷取到語音，請再試一次。', 'warn');
   };
 
   return recognition;
@@ -237,7 +237,7 @@ function buildRecognition(language) {
 function updateButton() {
   const busy = state.listening || state.starting;
   ui.speakInsertBtn.classList.toggle('is-listening', busy);
-  ui.speakInsertBtn.textContent = busy ? 'Stop & Insert' : 'Speak & Insert';
+  ui.speakInsertBtn.textContent = busy ? '停止並插入' : '語音輸入';
   ui.speakInsertBtn.disabled = !SpeechRecognition;
 }
 
@@ -257,7 +257,7 @@ async function getRecognitionLang() {
 
 async function ensureMicrophonePermission() {
   if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
-    setStatus('This Chrome context cannot request microphone access.', 'bad');
+    setStatus('此 Chrome 環境無法要求麥克風權限。', 'bad');
     return false;
   }
 
@@ -269,12 +269,12 @@ async function ensureMicrophonePermission() {
     return true;
   } catch (error) {
     const messages = {
-      NotAllowedError: 'Microphone permission denied. Allow microphone in site settings.',
-      SecurityError: 'Microphone access was blocked by browser security settings.',
-      NotFoundError: 'No working microphone was found.'
+      NotAllowedError: '麥克風權限被拒絕，請在網站權限中設為允許。',
+      SecurityError: '瀏覽器安全設定封鎖了麥克風。',
+      NotFoundError: '找不到可用的麥克風。'
     };
 
-    const message = messages[error?.name] || `Microphone request failed: ${error?.message || 'unknown error'}`;
+    const message = messages[error?.name] || `麥克風請求失敗：${error?.message || '未知錯誤'}`;
     setStatus(message, 'warn');
     return false;
   }
@@ -305,11 +305,11 @@ async function ensureInsertTargetReady() {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab || typeof tab.id !== 'number') {
-      return { ok: false, message: 'Active tab was not found.' };
+      return { ok: false, message: '找不到目前作用中的分頁。' };
     }
 
     if (isBrowserInternalTab(tab)) {
-      return { ok: false, message: 'Browser internal pages are not supported. Open a normal website tab.' };
+      return { ok: false, message: '不支援瀏覽器內部頁面，請開啟一般網站分頁。' };
     }
 
     const [{ result }] = await chrome.scripting.executeScript({
@@ -333,17 +333,17 @@ async function ensureInsertTargetReady() {
     }
 
     const reasonToMessage = {
-      no_target: 'Click inside a text field on the page first.',
-      unsupported_target: 'Current focus is not a supported text field.'
+      no_target: '請先在網頁點選文字輸入欄。',
+      unsupported_target: '目前焦點不是可支援的文字輸入欄。'
     };
 
-    return { ok: false, message: reasonToMessage[result?.reason] || 'Insert target is not ready.' };
+    return { ok: false, message: reasonToMessage[result?.reason] || '插入目標尚未準備好。' };
   } catch (error) {
     if (/Cannot access a chrome:\/\//i.test(error?.message || '')) {
-      return { ok: false, message: 'Browser internal pages are not supported. Open a normal website tab.' };
+      return { ok: false, message: '不支援瀏覽器內部頁面，請開啟一般網站分頁。' };
     }
 
-    return { ok: false, message: `Cannot access page target: ${error.message}` };
+    return { ok: false, message: `無法存取目標頁面：${error.message}` };
   }
 }
 
@@ -364,19 +364,19 @@ function joinTranscript(existing, chunk) {
 
 async function insertTextIntoActiveTab(text, options = {}) {
   if (!text) {
-    setStatus('No text to insert.', 'warn');
+    setStatus('沒有可插入的文字。', 'warn');
     return false;
   }
 
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab || typeof tab.id !== 'number') {
-      setStatus('Active tab was not found.', 'bad');
+      setStatus('找不到目前作用中的分頁。', 'bad');
       return false;
     }
 
     if (isBrowserInternalTab(tab)) {
-      setStatus('Browser internal pages are not supported. Open a normal website tab.', 'warn');
+      setStatus('不支援瀏覽器內部頁面，請開啟一般網站分頁。', 'warn');
       return false;
     }
 
@@ -435,31 +435,31 @@ async function insertTextIntoActiveTab(text, options = {}) {
     });
 
     if (result?.ok) {
-      setStatus(options.successMessage || 'Inserted into page.', 'ok');
+      setStatus(options.successMessage || '已插入到頁面。', 'ok');
       return true;
     }
 
     const reasonToMessage = {
-      no_target: 'Click inside a text field on the page first.',
-      selection_missing: 'Failed to read caret position in editable content.',
-      unsupported_target: 'Current focus is not a supported text field.'
+      no_target: '請先在網頁點選文字輸入欄。',
+      selection_missing: '無法讀取可編輯區域的游標位置。',
+      unsupported_target: '目前焦點不是可支援的文字輸入欄。'
     };
 
-    setStatus(reasonToMessage[result?.reason] || 'Insert failed.', 'warn');
+    setStatus(reasonToMessage[result?.reason] || '插入失敗。', 'warn');
     return false;
   } catch (error) {
     const message = error?.message || '';
     if (/Cannot access a chrome:\/\//i.test(message)) {
-      setStatus('Browser internal pages are not supported. Open a normal website tab.', 'warn');
+      setStatus('不支援瀏覽器內部頁面，請開啟一般網站分頁。', 'warn');
       return false;
     }
 
     if (/must request permission to access the respective host/i.test(message)) {
-      setStatus('Site permission unavailable. Reload extension and retry.', 'warn');
+      setStatus('網站權限不足，請重新載入擴充功能後再試。', 'warn');
       return false;
     }
 
-    setStatus(`Insert failed: ${message}`, 'bad');
+    setStatus(`插入失敗：${message}`, 'bad');
     return false;
   }
 }

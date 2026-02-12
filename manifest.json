@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Cantonese Speak & Insert",
-  "description": "One-tap Cantonese voice typing and auto-insert for Chrome.",
+  "name": "廣東話語音輸入",
+  "description": "一鍵廣東話語音輸入，並自動插入至目前文字欄位。",
   "version": "1.0.0",
   "icons": {
     "16": "icons/icon-16.png",
@@ -35,7 +35,7 @@
     }
   ],
   "action": {
-    "default_title": "Open Speak & Insert",
+    "default_title": "開啟語音輸入面板",
     "default_icon": {
       "16": "icons/icon-16.png",
       "32": "icons/icon-32.png",

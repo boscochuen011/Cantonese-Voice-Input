@@ -59,7 +59,7 @@ function wireActions() {
   });
 
   ui.skipSetupBtn?.addEventListener('click', () => {
-    setFinishMessage('Setup skipped for now. You can reopen this wizard from the side panel.');
+    setFinishMessage('你已暫時略過設定，可稍後在側邊面板重新開啟設定精靈。');
   });
 }
 
@@ -91,7 +91,7 @@ async function restoreSavedProgress() {
       ui.stepChecks.forEach((checkbox) => {
         checkbox.checked = true;
       });
-      setFinishMessage('Setup was already completed previously. You can review settings and close this tab.');
+      setFinishMessage('你之前已完成設定，可以檢查後直接關閉此分頁。');
     }
   } catch (_error) {
     // Keep default unchecked state.
@@ -126,7 +126,7 @@ function updateProgressUI() {
   });
 
   if (ui.progressText) {
-    ui.progressText.textContent = `${doneCount} / ${STEP_IDS.length} steps completed.`;
+    ui.progressText.textContent = `已完成 ${doneCount} / ${STEP_IDS.length} 步。`;
   }
 
   if (ui.completeSetupBtn) {
@@ -154,7 +154,7 @@ async function completeSetup() {
     // Keep UX responsive even when storage is temporarily unavailable.
   }
 
-  setFinishMessage('Setup completed and saved. You can close this tab and start using the extension.');
+  setFinishMessage('設定已完成並儲存，你可以關閉此分頁並開始使用插件。');
 }
 
 function setFinishMessage(message) {
@@ -170,14 +170,14 @@ async function openCurrentSitePermission() {
   const origin = await getActiveTabOrigin();
   if (!origin) {
     await openChromeTab(MICROPHONE_SETTINGS_URL);
-    setFinishMessage('No normal website tab detected. Opened global microphone settings instead.');
+    setFinishMessage('未偵測到一般網站分頁，已改為開啟全域麥克風設定。');
     await updateCurrentSiteLabel();
     return;
   }
 
   const permissionUrl = `chrome://settings/content/siteDetails?site=${encodeURIComponent(origin)}`;
   await openChromeTab(permissionUrl);
-  setFinishMessage(`Opened site permission settings for ${origin}. Set microphone to Allow.`);
+  setFinishMessage(`已開啟 ${origin} 的網站權限設定，請把麥克風設為「允許」。`);
   await updateCurrentSiteLabel(origin);
 }
 
@@ -188,8 +188,8 @@ async function updateCurrentSiteLabel(originOverride) {
 
   const origin = originOverride || await getActiveTabOrigin();
   ui.currentSiteLabel.textContent = origin
-    ? `Detected site: ${origin}`
-    : 'No normal website tab detected. Open any https/http page and retry.';
+    ? `已偵測網站：${origin}`
+    : '未偵測到一般網站分頁，請先開啟任何 https/http 網頁再重試。';
 }
 
 async function openChromeTab(url) {
