@@ -403,11 +403,87 @@ async function insertTextIntoActiveTab(text, options = {}) {
     }
 
     if (/Could not establish connection\. Receiving end does not exist\./i.test(message)) {
+      const fallbackInserted = await insertTextViaScriptingFallback(text);
+      if (fallbackInserted) {
+        setStatus(options.successMessage || '已插入到頁面。', 'ok');
+        return true;
+      }
+
       setStatus('擴充功能連線中斷，請重新整理該頁面後再試。', 'warn');
       return false;
     }
 
     setStatus(`插入失敗：${message}`, 'bad');
+    return false;
+  }
+}
+
+async function insertTextViaScriptingFallback(payload) {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab || typeof tab.id !== 'number' || isBrowserInternalTab(tab)) {
+      return false;
+    }
+
+    const [{ result }] = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: (text) => {
+        const active = document.activeElement;
+        if (!active) {
+          return false;
+        }
+
+        const textInputTypes = new Set(['text', 'search', 'url', 'tel', 'password', 'email', 'number']);
+        const isTextArea = active instanceof HTMLTextAreaElement;
+        const isTextInput = active instanceof HTMLInputElement && textInputTypes.has(active.type);
+
+        if (isTextArea || isTextInput) {
+          active.focus();
+          const start = typeof active.selectionStart === 'number' ? active.selectionStart : active.value.length;
+          const end = typeof active.selectionEnd === 'number' ? active.selectionEnd : active.value.length;
+          if (typeof active.setRangeText === 'function') {
+            active.setRangeText(text, start, end, 'end');
+          } else {
+            active.value = `${active.value.slice(0, start)}${text}${active.value.slice(end)}`;
+            const cursor = start + text.length;
+            active.selectionStart = cursor;
+            active.selectionEnd = cursor;
+          }
+
+          active.dispatchEvent(new Event('input', { bubbles: true }));
+          active.dispatchEvent(new Event('change', { bubbles: true }));
+          return true;
+        }
+
+        if (!active.isContentEditable || typeof document.execCommand !== 'function') {
+          return false;
+        }
+
+        active.focus();
+        const selection = window.getSelection();
+        if (!selection) {
+          return false;
+        }
+
+        if (selection.rangeCount === 0 || !active.contains(selection.anchorNode)) {
+          const range = document.createRange();
+          range.selectNodeContents(active);
+          range.collapse(false);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+
+        try {
+          return document.execCommand('insertText', false, text);
+        } catch (_error) {
+          return false;
+        }
+      },
+      args: [payload]
+    });
+
+    return Boolean(result);
+  } catch (_error) {
     return false;
   }
 }

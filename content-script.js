@@ -301,29 +301,68 @@
       return false;
     }
 
-    const anchorNode = selection.anchorNode;
-    const anchorElement = anchorNode
-      ? (anchorNode.nodeType === Node.ELEMENT_NODE ? anchorNode : anchorNode.parentElement)
-      : null;
-    const inSlateZeroWidth = Boolean(anchorElement?.closest?.('[data-slate-zero-width]'));
+    const editRoot = target.closest?.('[data-slate-editor="true"]') || target;
+    const isSlateEditor = Boolean(
+      editRoot?.getAttribute?.('data-slate-editor') === 'true'
+      || editRoot?.closest?.('[data-slate-editor="true"]')
+    );
 
-    if (selection.rangeCount === 0 || !target.contains(selection.anchorNode) || inSlateZeroWidth) {
+    const ensureCaretInsideTarget = () => {
       const range = document.createRange();
-      range.selectNodeContents(target);
-      range.collapse(false);
+      if (isSlateEditor) {
+        const slateValue = editRoot.querySelector?.('[data-slate-node="value"]') || editRoot;
+        const zeroWidth = slateValue.querySelector?.('[data-slate-zero-width]');
+        const zeroWidthText = zeroWidth?.firstChild && zeroWidth.firstChild.nodeType === Node.TEXT_NODE
+          ? zeroWidth.firstChild
+          : null;
+
+        if (zeroWidthText) {
+          range.setStart(zeroWidthText, 0);
+          range.collapse(true);
+        } else {
+          const walker = document.createTreeWalker(slateValue, NodeFilter.SHOW_TEXT);
+          const textNode = walker.nextNode();
+          if (textNode) {
+            const offset = typeof textNode.nodeValue === 'string' ? textNode.nodeValue.length : 0;
+            range.setStart(textNode, offset);
+            range.collapse(true);
+          } else {
+            range.selectNodeContents(slateValue);
+            range.collapse(false);
+          }
+        }
+      } else {
+        range.selectNodeContents(editRoot);
+        range.collapse(false);
+      }
+
       selection.removeAllRanges();
       selection.addRange(range);
+    };
+
+    if (selection.rangeCount === 0 || !editRoot.contains(selection.anchorNode)) {
+      ensureCaretInsideTarget();
     }
 
-    if (typeof document.execCommand !== 'function') {
-      return false;
+    const tryInsertText = () => {
+      if (typeof document.execCommand !== 'function') {
+        return false;
+      }
+
+      try {
+        return document.execCommand('insertText', false, payload);
+      } catch (_error) {
+        return false;
+      }
+    };
+
+    let inserted = tryInsertText();
+    if (!inserted && isSlateEditor) {
+      ensureCaretInsideTarget();
+      inserted = tryInsertText();
     }
 
-    try {
-      return document.execCommand('insertText', false, payload);
-    } catch (_error) {
-      return false;
-    }
+    return inserted;
   }
 
   function findLikelyEditableTarget() {

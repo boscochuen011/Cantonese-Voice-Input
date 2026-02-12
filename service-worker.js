@@ -118,46 +118,81 @@ async function insertTextInTab(tabId, payload) {
       }
 
       const editRoot = active.closest?.('[data-slate-editor="true"]') || active;
+      const isSlateEditor = Boolean(
+        editRoot?.getAttribute?.('data-slate-editor') === 'true'
+        || editRoot?.closest?.('[data-slate-editor="true"]')
+      );
 
       const ensureCaretInsideTarget = () => {
         const range = document.createRange();
-        range.selectNodeContents(editRoot);
-        range.collapse(false);
+        if (isSlateEditor) {
+          const slateValue = editRoot.querySelector?.('[data-slate-node="value"]') || editRoot;
+          const zeroWidth = slateValue.querySelector?.('[data-slate-zero-width]');
+          const zeroWidthText = zeroWidth?.firstChild && zeroWidth.firstChild.nodeType === Node.TEXT_NODE
+            ? zeroWidth.firstChild
+            : null;
+
+          if (zeroWidthText) {
+            range.setStart(zeroWidthText, 0);
+            range.collapse(true);
+          } else {
+            const walker = document.createTreeWalker(slateValue, NodeFilter.SHOW_TEXT);
+            let textNode = walker.nextNode();
+            if (textNode) {
+              const offset = typeof textNode.nodeValue === 'string' ? textNode.nodeValue.length : 0;
+              range.setStart(textNode, offset);
+              range.collapse(true);
+            } else {
+              range.selectNodeContents(slateValue);
+              range.collapse(false);
+            }
+          }
+        } else {
+          range.selectNodeContents(editRoot);
+          range.collapse(false);
+        }
+
         selection.removeAllRanges();
         selection.addRange(range);
       };
 
-      const anchorNode = selection.anchorNode;
-      const anchorElement = anchorNode
-        ? (anchorNode.nodeType === Node.ELEMENT_NODE ? anchorNode : anchorNode.parentElement)
-        : null;
-      const inSlateZeroWidth = Boolean(anchorElement?.closest?.('[data-slate-zero-width]'));
-
-      if (selection.rangeCount === 0 || !editRoot.contains(selection.anchorNode) || inSlateZeroWidth) {
+      if (selection.rangeCount === 0 || !editRoot.contains(selection.anchorNode)) {
         ensureCaretInsideTarget();
       }
 
       let insertedByCommand = false;
-      if (typeof document.execCommand === 'function') {
-        try {
-          insertedByCommand = document.execCommand('insertText', false, text);
-        } catch (_error) {
-          insertedByCommand = false;
+      const tryInsertText = () => {
+        if (typeof document.execCommand !== 'function') {
+          return false;
         }
+
+        try {
+          return document.execCommand('insertText', false, text);
+        } catch (_error) {
+          return false;
+        }
+      };
+
+      insertedByCommand = tryInsertText();
+      if (!insertedByCommand && isSlateEditor) {
+        ensureCaretInsideTarget();
+        insertedByCommand = tryInsertText();
       }
 
       if (!insertedByCommand) {
-        const escaped = text
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/\n/g, '<br>');
+        if (!isSlateEditor) {
+          const escaped = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\n/g, '<br>');
 
-        if (typeof document.execCommand === 'function') {
-          try {
-            insertedByCommand = document.execCommand('insertHTML', false, escaped);
-          } catch (_error) {
-            insertedByCommand = false;
+          if (typeof document.execCommand === 'function') {
+            try {
+              insertedByCommand = document.execCommand('insertHTML', false, escaped);
+            } catch (_error) {
+              insertedByCommand = false;
+            }
           }
         }
       }
