@@ -232,13 +232,14 @@ function isSupportedPageUrl(url) {
 
 async function getActiveTabOrigin() {
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    const tabUrl = getTabUrl(tab);
-    if (!isSupportedPageUrl(tabUrl)) {
+    const tabs = await chrome.tabs.query({ currentWindow: true });
+    const candidates = tabs.filter((tab) => isSupportedPageUrl(getTabUrl(tab)));
+    if (!candidates.length) {
       return '';
     }
 
-    return new URL(tabUrl).origin;
+    candidates.sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0));
+    return new URL(getTabUrl(candidates[0])).origin;
   } catch (_error) {
     return '';
   }
