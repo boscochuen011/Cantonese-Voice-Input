@@ -76,7 +76,6 @@ If shortcut appears to do nothing:
 - `panel.css` - side panel styling
 - `panel.js` - side panel interaction logic
 - `icons/` - packaged extension icon sizes (`16/32/48/128`)
-- `webstore/` - store listing drafts, policy templates, and screenshots
 
 ## Publishing Checklist
 
