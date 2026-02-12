@@ -369,103 +369,9 @@ async function insertTextIntoActiveTab(text, options = {}) {
   }
 
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab || typeof tab.id !== 'number') {
-      setStatus('找不到目前作用中的分頁。', 'bad');
-      return false;
-    }
-
-    if (isBrowserInternalTab(tab)) {
-      setStatus('不支援瀏覽器內部頁面，請開啟一般網站分頁。', 'warn');
-      return false;
-    }
-
-    const [{ result }] = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: (payload) => {
-        const active = document.activeElement;
-        if (!active) {
-          return { ok: false, reason: 'no_target' };
-        }
-
-        const textInputTypes = new Set(['text', 'search', 'url', 'tel', 'password', 'email', 'number']);
-        const isTextArea = active instanceof HTMLTextAreaElement;
-        const isTextInput = active instanceof HTMLInputElement && textInputTypes.has(active.type);
-
-        if (isTextArea || isTextInput) {
-          const start = typeof active.selectionStart === 'number' ? active.selectionStart : active.value.length;
-          const end = typeof active.selectionEnd === 'number' ? active.selectionEnd : active.value.length;
-
-          active.value = `${active.value.slice(0, start)}${payload}${active.value.slice(end)}`;
-          const cursor = start + payload.length;
-          active.selectionStart = cursor;
-          active.selectionEnd = cursor;
-          active.focus();
-          active.dispatchEvent(new Event('input', { bubbles: true }));
-          active.dispatchEvent(new Event('change', { bubbles: true }));
-          return { ok: true };
-        }
-
-        if (active.isContentEditable) {
-          active.focus();
-          const selection = window.getSelection();
-          if (!selection) {
-            return { ok: false, reason: 'selection_missing' };
-          }
-
-          const ensureCaretInsideTarget = () => {
-            const range = document.createRange();
-            range.selectNodeContents(active);
-            range.collapse(false);
-            selection.removeAllRanges();
-            selection.addRange(range);
-          };
-
-          if (selection.rangeCount === 0 || !active.contains(selection.anchorNode)) {
-            ensureCaretInsideTarget();
-          }
-
-          let insertedByCommand = false;
-          if (typeof document.execCommand === 'function') {
-            try {
-              insertedByCommand = document.execCommand('insertText', false, payload);
-            } catch (_error) {
-              insertedByCommand = false;
-            }
-          }
-
-          if (insertedByCommand) {
-            return { ok: true };
-          }
-
-          if (selection.rangeCount === 0) {
-            ensureCaretInsideTarget();
-          }
-
-          const range = selection.getRangeAt(0);
-          range.deleteContents();
-          const textNode = document.createTextNode(payload);
-          range.insertNode(textNode);
-          range.setStartAfter(textNode);
-          range.collapse(true);
-          selection.removeAllRanges();
-          selection.addRange(range);
-
-          try {
-            active.dispatchEvent(new InputEvent('input', {
-              bubbles: true,
-              inputType: 'insertText',
-              data: payload
-            }));
-          } catch (_error) {
-            active.dispatchEvent(new Event('input', { bubbles: true }));
-          }
-          return { ok: true };
-        }
-
-        return { ok: false, reason: 'unsupported_target' };
-      },
-      args: [text]
+    const result = await chrome.runtime.sendMessage({
+      type: 'insertTextIntoActiveContext',
+      text
     });
 
     if (result?.ok) {
@@ -476,7 +382,9 @@ async function insertTextIntoActiveTab(text, options = {}) {
     const reasonToMessage = {
       no_target: '請先在網頁點選文字輸入欄；主介面或無輸入欄位置唔支援插入。',
       selection_missing: '無法讀取可編輯區域的游標位置。',
-      unsupported_target: '目前焦點不是可支援的文字輸入欄。'
+      unsupported_target: '目前焦點不是可支援的文字輸入欄。',
+      unsupported_page: '不支援瀏覽器內部頁面，請開啟一般網站分頁。',
+      tab_not_found: '找不到目前作用中的分頁。'
     };
 
     setStatus(reasonToMessage[result?.reason] || '插入失敗。', 'warn');

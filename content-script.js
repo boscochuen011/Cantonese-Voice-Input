@@ -144,12 +144,7 @@
       state.recognition = null;
 
       if (payload) {
-        const inserted = insertIntoTarget(state.target, payload) || insertIntoTarget(getPreferredTarget(), payload);
-        if (inserted) {
-          setOverlayStatus('已插入文字。', 'ok', true);
-        } else {
-          setOverlayStatus('找不到可插入文字的位置。', 'warn', true);
-        }
+        void insertViaBackground(payload);
         return;
       }
 
@@ -229,82 +224,31 @@
     return needsNewline ? `${existing.trimEnd()}\n${next}` : `${existing.trimEnd()}${next}`;
   }
 
-  function insertIntoTarget(target, payload) {
-    if (!isSupportedTarget(target) || !payload) {
-      return false;
-    }
+  async function insertViaBackground(payload) {
+    try {
+      const response = await chrome.runtime.sendMessage({
+        type: 'insertTextIntoActiveContext',
+        text: payload
+      });
 
-    if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) {
-      target.focus();
-      const start = typeof target.selectionStart === 'number' ? target.selectionStart : target.value.length;
-      const end = typeof target.selectionEnd === 'number' ? target.selectionEnd : target.value.length;
-      target.value = `${target.value.slice(0, start)}${payload}${target.value.slice(end)}`;
-      const cursor = start + payload.length;
-      target.selectionStart = cursor;
-      target.selectionEnd = cursor;
-      target.dispatchEvent(new Event('input', { bubbles: true }));
-      target.dispatchEvent(new Event('change', { bubbles: true }));
-      return true;
-    }
-
-    if (target.isContentEditable) {
-      target.focus();
-      const selection = window.getSelection();
-      if (!selection) {
-        return false;
+      if (response?.ok) {
+        setOverlayStatus('已插入文字。', 'ok', true);
+        return;
       }
 
-      const ensureCaretInsideTarget = () => {
-        const range = document.createRange();
-        range.selectNodeContents(target);
-        range.collapse(false);
-        selection.removeAllRanges();
-        selection.addRange(range);
+      const reasonToMessage = {
+        no_target: '請先點選文字輸入欄，再連按兩下 Control。',
+        unsupported_target: '目前焦點位置不支援插字。',
+        unsupported_page: '此頁面不支援輸入，請切換到一般網站。',
+        selection_missing: '無法定位游標，請重新點選輸入欄。',
+        tab_not_found: '找不到作用中的分頁。',
+        empty_text: '沒有可插入的文字。'
       };
 
-      if (selection.rangeCount === 0 || !target.contains(selection.anchorNode)) {
-        ensureCaretInsideTarget();
-      }
-
-      let insertedByCommand = false;
-      if (typeof document.execCommand === 'function') {
-        try {
-          insertedByCommand = document.execCommand('insertText', false, payload);
-        } catch (_error) {
-          insertedByCommand = false;
-        }
-      }
-
-      if (insertedByCommand) {
-        return true;
-      }
-
-      if (selection.rangeCount === 0) {
-        ensureCaretInsideTarget();
-      }
-
-      const range = selection.getRangeAt(0);
-      range.deleteContents();
-      const textNode = document.createTextNode(payload);
-      range.insertNode(textNode);
-      range.setStartAfter(textNode);
-      range.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(range);
-
-      try {
-        target.dispatchEvent(new InputEvent('input', {
-          bubbles: true,
-          inputType: 'insertText',
-          data: payload
-        }));
-      } catch (_error) {
-        target.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-      return true;
+      setOverlayStatus(reasonToMessage[response?.reason] || '插入失敗，請再試一次。', 'warn', true);
+    } catch (_error) {
+      setOverlayStatus('插入失敗，請再試一次。', 'warn', true);
     }
-
-    return false;
   }
 
   function setupDoubleControlTrigger() {
