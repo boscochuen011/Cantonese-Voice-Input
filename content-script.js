@@ -241,13 +241,74 @@
         unsupported_target: '目前焦點位置不支援插字。',
         unsupported_page: '此頁面不支援輸入，請切換到一般網站。',
         selection_missing: '無法定位游標，請重新點選輸入欄。',
+        editor_insert_failed: '此網站編輯器拒絕非原生插字，請重新點選輸入欄後重試。',
         tab_not_found: '找不到作用中的分頁。',
         empty_text: '沒有可插入的文字。'
       };
 
       setOverlayStatus(reasonToMessage[response?.reason] || '插入失敗，請再試一次。', 'warn', true);
     } catch (_error) {
-      setOverlayStatus('插入失敗，請再試一次。', 'warn', true);
+      const inserted = insertTextLocally(payload);
+      if (inserted) {
+        setOverlayStatus('已插入文字。', 'ok', true);
+        return;
+      }
+
+      setOverlayStatus('擴充功能連線中斷，請重新整理此頁後再試。', 'warn', true);
+    }
+  }
+
+  function insertTextLocally(payload) {
+    const target = getPreferredTarget() || state.target;
+    if (!isSupportedTarget(target)) {
+      return false;
+    }
+
+    if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) {
+      target.focus();
+      const start = typeof target.selectionStart === 'number' ? target.selectionStart : target.value.length;
+      const end = typeof target.selectionEnd === 'number' ? target.selectionEnd : target.value.length;
+
+      if (typeof target.setRangeText === 'function') {
+        target.setRangeText(payload, start, end, 'end');
+      } else {
+        target.value = `${target.value.slice(0, start)}${payload}${target.value.slice(end)}`;
+        const cursor = start + payload.length;
+        target.selectionStart = cursor;
+        target.selectionEnd = cursor;
+      }
+
+      target.dispatchEvent(new Event('input', { bubbles: true }));
+      target.dispatchEvent(new Event('change', { bubbles: true }));
+      return true;
+    }
+
+    if (!target.isContentEditable) {
+      return false;
+    }
+
+    target.focus();
+    const selection = window.getSelection();
+    if (!selection) {
+      return false;
+    }
+
+    if (selection.rangeCount === 0 || !target.contains(selection.anchorNode)) {
+      const range = document.createRange();
+      range.selectNodeContents(target);
+      range.collapse(false);
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+
+    if (typeof document.execCommand !== 'function') {
+      return false;
+    }
+
+    try {
+      return document.execCommand('insertText', false, payload);
+    } catch (_error) {
+      return false;
     }
   }
 

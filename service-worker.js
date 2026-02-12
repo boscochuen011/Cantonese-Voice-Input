@@ -139,21 +139,11 @@ async function insertTextInTab(tabId, payload) {
       }
 
       if (!insertedByCommand) {
-        if (selection.rangeCount === 0) {
-          ensureCaretInsideTarget();
-        }
-
-        const range = selection.getRangeAt(0);
-        range.deleteContents();
-        const textNode = document.createTextNode(text);
-        range.insertNode(textNode);
-        range.setStartAfter(textNode);
-        range.collapse(true);
-        selection.removeAllRanges();
-        selection.addRange(range);
+        // For rich editors (e.g. Discord/WhatsApp), raw node insertion can desync editor state.
+        // We fail fast instead of forcing an unsafe insertion that can lock the input box.
+        return { ok: false, reason: 'editor_insert_failed' };
       }
 
-      emitInput();
       return { ok: true };
     },
     args: [payload]

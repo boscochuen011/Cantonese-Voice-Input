@@ -384,6 +384,7 @@ async function insertTextIntoActiveTab(text, options = {}) {
       selection_missing: '無法讀取可編輯區域的游標位置。',
       unsupported_target: '目前焦點不是可支援的文字輸入欄。',
       unsupported_page: '不支援瀏覽器內部頁面，請開啟一般網站分頁。',
+      editor_insert_failed: '此網站編輯器拒絕非原生插字，請重新點選輸入欄後重試。',
       tab_not_found: '找不到目前作用中的分頁。'
     };
 
@@ -398,6 +399,11 @@ async function insertTextIntoActiveTab(text, options = {}) {
 
     if (/must request permission to access the respective host/i.test(message)) {
       setStatus('網站權限不足，請重新載入擴充功能後再試。', 'warn');
+      return false;
+    }
+
+    if (/Could not establish connection\. Receiving end does not exist\./i.test(message)) {
+      setStatus('擴充功能連線中斷，請重新整理該頁面後再試。', 'warn');
       return false;
     }
 
