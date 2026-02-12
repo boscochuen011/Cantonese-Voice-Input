@@ -1,31 +1,22 @@
 # Chrome Web Store 上架清單（繁中）
 
-## 重要限制
-- 無法由程式「自動代你完成上架送審」。
-- 原因：開發者帳號註冊、付款、2-Step Verification、條款同意、最終送審都必須由帳號持有人在 Web Store 後台手動完成。
+## 先講清楚
+- 我可以幫你準備所有素材與文件，但無法代你「自動按鍵送審」。
+- 原因：登入、付款、2-step verification、同意條款、最終送審都必須由你本人在官方後台完成。
 
-## 你已可直接使用的素材
-- 上架文案：`webstore/listing-copy.zh-Hant.md`
-- 權限與資料使用說明：`webstore/permission-and-data-disclosure.zh-Hant.md`
+## 已準備素材
+- Store 文案：`webstore/listing-copy.zh-Hant.md`
+- 權限與資料披露草稿：`webstore/permission-and-data-disclosure.zh-Hant.md`
 - 私隱政策範本：`webstore/privacy-policy.zh-Hant.md`
 - 截圖：`webstore/screenshots/01-setup-wizard.png`、`webstore/screenshots/02-side-panel.png`、`webstore/screenshots/03-input-demo.png`
 
-## 送審前檢查
-1. `manifest.json` 的 `name`、`description`、`version` 已確認。
-2. 所有 icon 正常：`icons/icon-16.png`、`icons/icon-32.png`、`icons/icon-48.png`、`icons/icon-128.png`。
-3. 功能測試完成：
-   - 網頁輸入欄可用。
-   - `Control` 連按兩下可啟動。
-   - 主介面或無輸入欄位會有提示，不會誤插入。
-4. 已準備好支援電郵與私隱政策網址（若未有網站，可先放 GitHub Pages）。
-
-## Dashboard 提交流程
-1. 開啟 Chrome Web Store Developer Dashboard：<https://chrome.google.com/webstore/devconsole>
-2. Upload 新版本 zip（見下方打包指令）。
-3. 填寫 Store listing（可直接複製 `webstore/listing-copy.zh-Hant.md`）。
-4. 上傳至少 1 張截圖（建議 3 張）。
-5. 填寫 Data usage / Privacy 欄位（可參考 `webstore/permission-and-data-disclosure.zh-Hant.md`）。
-6. 送出審核。
+## 上架步驟
+1. 開 Developer Dashboard：<https://chrome.google.com/webstore/devconsole>
+2. 上傳 extension zip（根目錄需有 `manifest.json`）
+3. 填 Store listing（可直接用文案檔）
+4. 上傳截圖（至少 1 張，建議 3 張）
+5. 填 Data usage / Privacy 欄位
+6. Submit for review
 
 ## 打包指令（PowerShell）
 ```powershell

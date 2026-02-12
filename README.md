@@ -31,9 +31,9 @@ The wizard provides 2 guided steps:
 After finishing all steps, click **Complete Setup**.  
 You can reopen the wizard from the side panel via **Open Setup Wizard**.
 
-Setup page reminders:
-- In normal websites, double-press `Control` to start quick voice input.
-- Main interface pages or places without text fields cannot use this input flow.
+Setup reminders shown in the wizard:
+- Double-press `Control` on normal websites to start quick voice input.
+- Main interface pages / browser internal pages / places without text fields do not support direct insert.
 
 ## Usage
 
@@ -76,7 +76,7 @@ If shortcut appears to do nothing:
 - `panel.css` - side panel styling
 - `panel.js` - side panel interaction logic
 - `icons/` - packaged extension icon sizes (`16/32/48/128`)
-- `webstore/` - Chrome Web Store submission docs and screenshots
+- `webstore/` - store listing drafts, policy templates, and screenshots
 
 ## Publishing Checklist
 

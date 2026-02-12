@@ -3,48 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>語音輸入測試頁</title>
+  <title>語音輸入示範頁</title>
   <style>
-    :root {
-      --bg-a: #eef6ff;
-      --bg-b: #fff8ef;
-      --ink: #1e2b47;
-      --line: #ced9ed;
-      --accent: #0f766e;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
     body {
       margin: 0;
       min-height: 100vh;
       font-family: "Avenir Next", "Segoe UI", "PingFang HK", "Microsoft JhengHei", sans-serif;
-      color: var(--ink);
-      background:
-        radial-gradient(circle at 6% 0%, rgba(15, 118, 110, 0.12), transparent 40%),
-        linear-gradient(160deg, var(--bg-a), var(--bg-b));
+      background: linear-gradient(160deg, #eef6ff, #fff8ef);
       display: grid;
       place-items: center;
       padding: 24px;
+      box-sizing: border-box;
     }
 
-    .card {
+    main {
       width: min(900px, 100%);
-      background: rgba(255, 255, 255, 0.94);
-      border: 1px solid var(--line);
-      border-radius: 18px;
+      background: #ffffffef;
+      border: 1px solid #cfd9ed;
+      border-radius: 16px;
       padding: 20px;
       display: grid;
-      gap: 12px;
-      box-shadow: 0 14px 34px rgba(31, 41, 66, 0.09);
+      gap: 10px;
+      box-shadow: 0 14px 30px rgba(20, 30, 55, 0.1);
     }
 
     h1 {
       margin: 0;
-      font-size: 34px;
-      line-height: 1.1;
+      font-size: 30px;
     }
 
     p {
@@ -52,37 +37,30 @@
       line-height: 1.45;
     }
 
-    .tip {
-      border-left: 4px solid var(--accent);
-      background: #f1fbfa;
-      padding: 10px 12px;
-      border-radius: 10px;
-    }
-
     input,
     textarea {
       width: 100%;
-      border: 1px solid #bccbe7;
+      border: 1px solid #bccae6;
       border-radius: 10px;
-      padding: 12px;
+      padding: 11px 12px;
       font: inherit;
       font-size: 15px;
-      background: #fff;
+      box-sizing: border-box;
     }
 
     textarea {
-      min-height: 210px;
+      min-height: 220px;
       resize: vertical;
     }
   </style>
 </head>
 <body>
-  <main class="card">
-    <h1>語音輸入測試頁</h1>
-    <p>先點選下面文字欄，再連按兩下 <code>Control</code> 啟動語音輸入。</p>
-    <p class="tip">提醒：主介面或無文字輸入欄的位置，不能直接插入文字。</p>
-    <input type="text" placeholder="喺度測試短句輸入...">
-    <textarea placeholder="喺度測試長句語音輸入..."></textarea>
+  <main>
+    <h1>語音輸入示範頁</h1>
+    <p>先點選文字欄，再連按兩下 <code>Control</code> 啟動語音輸入。</p>
+    <p>提醒：主介面或無輸入欄位置不支援直接插字。</p>
+    <input type="text" placeholder="請在此測試短句">
+    <textarea placeholder="請在此測試長段語音輸入"></textarea>
   </main>
 </body>
 </html>
