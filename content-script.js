@@ -612,7 +612,7 @@
         grid-template-columns: auto 1fr;
         align-items: start;
         gap: 8px;
-        width: min(86vw, 360px);
+        width: min(92vw, 560px);
         padding: 10px 12px;
         border-radius: 14px;
         border: 1px solid #d7deea;
@@ -621,6 +621,7 @@
         font-size: 12px;
         line-height: 1.35;
         box-shadow: 0 10px 20px rgba(17, 25, 40, 0.12);
+        pointer-events: auto;
       }
       #${OVERLAY_ID} .quick-voice-dot {
         width: 8px;
@@ -649,9 +650,25 @@
       #${OVERLAY_ID} .quick-voice-text {
         display: block;
         overflow-y: auto;
-        max-height: 88px;
+        max-height: min(44vh, 280px);
         white-space: pre-wrap;
         word-break: break-word;
+        overflow-wrap: anywhere;
+        padding-right: 6px;
+        pointer-events: auto;
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable both-edges;
+      }
+      #${OVERLAY_ID} .quick-voice-text::-webkit-scrollbar {
+        width: 8px;
+      }
+      #${OVERLAY_ID} .quick-voice-text::-webkit-scrollbar-track {
+        background: #edf2fb;
+        border-radius: 999px;
+      }
+      #${OVERLAY_ID} .quick-voice-text::-webkit-scrollbar-thumb {
+        background: #b8c4dd;
+        border-radius: 999px;
       }
       #${OVERLAY_ID} .quick-voice-ok .quick-voice-dot {
         background: #d83b20;
@@ -706,9 +723,10 @@
     }
 
     if (autoHide) {
+      const hideDelayMs = typeof message === 'string' && message.length > 80 ? 6400 : 2200;
       hideOverlayTimer = window.setTimeout(() => {
         root.style.display = 'none';
-      }, 1800);
+      }, hideDelayMs);
     }
   }
 })();
